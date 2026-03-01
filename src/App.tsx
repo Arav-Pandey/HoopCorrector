@@ -1,51 +1,58 @@
-import React from "react";
-import { FaHome } from "react-icons/fa";
-import { IoCameraSharp, IoChatboxEllipses } from "react-icons/io5";
+import React, { useState } from "react";
 import "./App.css";
-import BottomBar from "./BottomBar.tsx";
-import Camera from "./Camera.tsx";
+import Form from "./Form.tsx";
 import Feedback from "./Feedback.tsx";
 import Home from "./Home.tsx";
+import Overlay from "./Overlay.tsx";
+import FormHome from "./FormHome.tsx";
+import ArcHome from "./ArcHome.tsx";
+import Arc from "./Arc.tsx";
+import HomeLogo from "./HomeLogo.tsx";
+import HoverSettings from "./HoverSettings.tsx";
 
 export default function App() {
   const [active, setActive] = React.useState("Home");
+  const [videoURL, setVideoURL] = useState<string>("");
+  const [contextList, setContextList] = useState<string[]>([]);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      <main className="mx-auto max-w-md p-4">
-        <h1 className="text-xl font-semibold">Page: {active}</h1>
-        {active === "Camera" ? (
-          <Camera setActive={setActive} />
+      <div className="absolute left-10 top-5">
+        <HoverSettings name="Home">
+          <HomeLogo active={active} setActive={setActive} />
+        </HoverSettings>
+      </div>
+
+      <main className="mx-auto w-full p-4">
+        {active === "Form" ? (
+          <Form
+            setActive={setActive}
+            videoURL={videoURL}
+            setContextList={setContextList}
+            contextList={contextList}
+          />
         ) : active === "Home" ? (
-          <Home />
+          <Home setActive={setActive} />
+        ) : active === "Feedback" ? (
+          <Feedback contextList={contextList} setContextList={setContextList} />
+        ) : active === "FormHome" ? (
+          <FormHome
+            setActive={setActive}
+            setVideoURL={setVideoURL}
+            videoURL={videoURL}
+          />
+        ) : active === "ArcHome" ? (
+          <ArcHome
+            setActive={setActive}
+            setVideoURL={setVideoURL}
+            videoURL={videoURL}
+          />
+        ) : active === "Arc" ? (
+          <Arc videoUrl={videoURL} />
         ) : (
-          <Feedback />
+          <Overlay setActive={setActive} />
         )}
       </main>
-
-      <BottomBar
-        activeId={active}
-        items={[
-          {
-            id: "Camera",
-            label: "Camera",
-            onClick: () => setActive("Camera"),
-            icon: <IoCameraSharp size={20} />,
-          },
-          {
-            id: "Home",
-            label: "Home",
-            onClick: () => setActive("Home"),
-            icon: <FaHome size={20} />,
-          },
-          {
-            id: "Feedback",
-            label: "Feedback",
-            onClick: () => setActive("Feedback"),
-            icon: <IoChatboxEllipses size={20} />,
-          },
-        ]}
-      />
     </div>
   );
 }
