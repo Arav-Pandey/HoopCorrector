@@ -32,26 +32,17 @@ export default function Overlay({ setActive }: Props) {
               setVis((prev) => !prev);
             }}
           >
-            <button
-              id="form-btn"
-              className="rounded overflow-hidden cursor-pointer relative"
-              onClick={() => {
-                setActive("FormHome");
-                setVis((prev) => !prev);
-              }}
-            >
-              {/* The white block - now set to z-0 */}
-              <div className="absolute inset-0 flex items-center justify-center z-0">
-                <div className="w-13 h-10 bg-white rounded-full"></div>
-              </div>
+            {/* The white block - now set to z-0 */}
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+              <div className="w-13 h-10 bg-white rounded-full"></div>
+            </div>
 
-              {/* The image - now set to relative and z-10 */}
-              <img
-                src={formButton}
-                alt="Form Button"
-                className="w-32 h-auto relative z-10"
-              />
-            </button>
+            {/* The image - now set to relative and z-10 */}
+            <img
+              src={formButton}
+              alt="Form Button"
+              className="w-32 h-auto relative z-10"
+            />
           </button>
 
           <p>or</p>

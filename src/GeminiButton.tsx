@@ -7,10 +7,6 @@ interface Props {
 export default function GeminiButton({ setActive }: Props) {
   const [vis, setVis] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setVis(false), 8000);
-    return () => clearTimeout(timer);
-  }, []);
   return (
     <div className="relative p-1 rounded-2xl overflow-hidden bg-zinc-800">
       {/* The LED ring with transition logic */}

@@ -1,5 +1,7 @@
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import GeminiButton from "../GeminiButton";
 import HandOverlay from "../HandOverlay";
+import LandmarkLine from "../LandmarkLine";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -14,9 +16,15 @@ interface Props {
   flareScore: number | null;
   angleScore: number | null;
   similarity: React.RefObject<number | null>;
-  dominantHandRef: React.RefObject<"left" | "right">;
+  setDominantHand: React.Dispatch<
+    React.SetStateAction<"left" | "right" | null>
+  >;
   bendFeedeback: string | null;
   bendScore: number | null;
+  rightShoulderRef: React.RefObject<NormalizedLandmark | null>;
+  leftShoulderRef: React.RefObject<NormalizedLandmark | null>;
+  rightElbowRef: React.RefObject<NormalizedLandmark | null>;
+  leftElbowRef: React.RefObject<NormalizedLandmark | null>;
 }
 
 export default function Display({
@@ -32,23 +40,35 @@ export default function Display({
   flareScore,
   angleScore,
   similarity,
-  dominantHandRef,
+  setDominantHand,
   bendFeedeback,
   bendScore,
+  rightShoulderRef,
+  leftShoulderRef,
+  rightElbowRef,
+  leftElbowRef,
 }: Props) {
   return (
     <div className="flex flex-col items-center w-full">
-      <HandOverlay dominantHandRef={dominantHandRef} />
+      <HandOverlay setDominantHand={setDominantHand} />
       {/* Video + Canvas wrapper */}
-      <div className="relative w-160 h-120 mx-auto">
-        <video ref={videoRef} width={640} height={480} playsInline muted />
-
+      <div className="relative w-[640px] h-[480px] mx-auto">
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          className="absolute inset-0 w-full h-full object-contain bg-black"
+        />
         <canvas
           ref={canvasRef}
-          width={640}
-          height={480}
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 w-full h-full pointer-events-none"
         />
+        {rightShoulderRef.current && rightElbowRef.current && (
+          <LandmarkLine
+            a={rightShoulderRef.current}
+            b={rightElbowRef.current}
+          />
+        )}
       </div>
       <button
         onClick={() => rewatchFeedback()}
@@ -56,13 +76,32 @@ export default function Display({
       >
         Rewatch Feedback
       </button>
-
       {/* Feedback text */}
-      <div className="mt-2 text-base font-bold text-center flex flex-col gap-4">
-        <p>Ankle placement feedback: {ankleFeedback}</p>
-        <p>Knee placement feedback: {kneeFeedback}</p>
-        <p>Elbow alignment feedback: {flareFeedback}</p>
-        <p>Knee Bend feedback: {bendFeedeback}</p>
+      <div className="mt-2 text-base font-bold text-center flex flex-col gap-4 mb-5">
+        <p>
+          Ankle placement feedback:{" "}
+          {ankleFeedback !== null && ankleFeedback !== ""
+            ? `${ankleFeedback}`
+            : "N/A"}
+        </p>
+        <p>
+          Knee placement feedback:{" "}
+          {kneeFeedback !== null && kneeFeedback !== ""
+            ? `${kneeFeedback}`
+            : "N/A"}
+        </p>
+        <p>
+          Elbow alignment feedback:{" "}
+          {flareFeedback !== null && flareFeedback !== ""
+            ? `${flareFeedback}`
+            : "N/A"}
+        </p>
+        <p>
+          Knee Bend feedback:{" "}
+          {bendFeedeback !== null && bendFeedeback !== ""
+            ? `${bendFeedeback}`
+            : "N/A"}
+        </p>
         <p>
           Elbow score:{" "}
           {elbowScore !== null ? elbowScore.toFixed(2) + "%" : "N/A"}
@@ -84,9 +123,13 @@ export default function Display({
             ? similarity.current.toFixed(2) + "%"
             : "N/A"}
         </p>
-        <p>Errors: {errorFeedback}</p>
+        <p>
+          Errors:{" "}
+          {errorFeedback === null || errorFeedback === ""
+            ? "N/A"
+            : errorFeedback}
+        </p>
       </div>
-
       <GeminiButton setActive={setActive} />
     </div>
   );

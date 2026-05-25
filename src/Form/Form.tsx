@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import {
+  PoseLandmarker,
+  FilesetResolver,
+  type NormalizedLandmark,
+} from "@mediapipe/tasks-vision";
 import Display from "./Display";
 import {
   calculateAngle,
@@ -8,9 +12,14 @@ import {
   getSimilarity,
   scoreElbowAngle,
   scoreElbowFlare,
-  getKneeFeedback,
   scoreBendAngle,
+  getFlareFeedback,
+  getAnkleFeedback,
+  getKneeDistanceFeedback,
+  getBendFeedback,
+  checkKeypointVisibility,
 } from "./calculations";
+import StephShot from "../assets/StephShot(3).mp4";
 
 interface Props {
   setActive: React.Dispatch<React.SetStateAction<string>>;
@@ -27,11 +36,11 @@ export default function Form({
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null); // Need canvas for the AI model to understand the pixels. Raw video data doesn't give pixels, canvas does
-  const [ankleFeedback, setAnkleFeedback] = useState("All Good!");
-  const [kneeFeedback, setKneeFeedback] = useState("All Good!");
-  const [flareFeedback, setFlareFeedback] = useState("All Good!");
+  const [ankleFeedback, setAnkleFeedback] = useState("");
+  const [kneeFeedback, setKneeFeedback] = useState("");
+  const [flareFeedback, setFlareFeedback] = useState("");
   const [bendFeedback, setBendFeedback] = useState<string | null>(null);
-  const [errorFeedback, setErrorFeedback] = useState("");
+  const [errorFeedback, setErrorFeedback] = useState<string | null>(null);
   const detectRef = useRef<() => void>(() => {});
   const [flareScore, setFlareScore] = useState<number | null>(null);
   const [angleScore, setAngleScore] = useState<number | null>(null);
@@ -46,9 +55,15 @@ export default function Form({
   const ankleDistanceRef = useRef<number | null>(null);
   const kneeDistanceRef = useRef<number | null>(null);
   const shoulderDistanceRef = useRef<number | null>(null);
-  const kneeAngleRef = useRef<number | null>(null);
+  const lowestKneeAngleRef = useRef<number>(Infinity);
   const elbowAngleRef = useRef<number | null>(null);
-  const dominantHandRef = useRef<"left" | "right">("right");
+  const [dominantHand, setDominantHand] = useState<"left" | "right" | null>(
+    null,
+  );
+  const rightShoulderRef = useRef<NormalizedLandmark | null>(null);
+  const leftShoulderRef = useRef<NormalizedLandmark | null>(null);
+  const rightElbowRef = useRef<NormalizedLandmark | null>(null);
+  const leftElbowRef = useRef<NormalizedLandmark | null>(null);
 
   useEffect(() => {
     if (angleScore === null || flareScore === null) return;
@@ -61,6 +76,10 @@ export default function Form({
   }, [angleScore, flareScore]);
 
   useEffect(() => {
+    if (dominantHand === null) {
+      console.log("Dominant hand not selected yet.", dominantHand);
+      return;
+    }
     let poseLandmarker: PoseLandmarker;
     let animationFrameId: number;
 
@@ -87,6 +106,7 @@ export default function Form({
       if (!videoRef.current) return;
 
       videoRef.current.src = videoURL;
+      // videoRef.current.src = StephShot;
       videoRef.current.crossOrigin = "anonymous";
       // Loads the video with no credentials or cookies and allows us access even if the browser permits it
 
@@ -138,6 +158,7 @@ export default function Form({
             wristY: avg.wristY / 5,
             elbowAngle: avg.elbowAngle / 5,
             flare: avg.flare / 5,
+            kneeAngle: lowestKneeAngleRef.current,
           };
           if (best.flare !== 0) {
             setFlareScore(scoreElbowFlare(best.flare));
@@ -145,8 +166,8 @@ export default function Form({
           if (best.elbowAngle !== 0) {
             setAngleScore(scoreElbowAngle(best.elbowAngle));
           }
-          if (kneeAngleRef.current !== null) {
-            setBendScore(scoreBendAngle(kneeAngleRef.current));
+          if (lowestKneeAngleRef.current !== null) {
+            setBendScore(scoreBendAngle(lowestKneeAngleRef.current));
           }
           console.log(
             "Flare: ",
@@ -155,10 +176,16 @@ export default function Form({
             best.elbowAngle,
             "WristY: ",
             best.wristY,
+            "KneeAngle: ",
+            best.kneeAngle,
           );
 
-          similarityRef.current = getSimilarity(best, curryBaseline);
-          console.log("Curry Similarity:", similarityRef.current);
+          if (best.flare !== 0 && best.elbowAngle !== 0 && best.wristY !== 0) {
+            similarityRef.current = getSimilarity(best, curryBaseline);
+            console.log("Curry Similarity:", similarityRef.current);
+          } else {
+            similarityRef.current = null;
+          }
 
           return;
         }
@@ -190,21 +217,25 @@ export default function Form({
           ctx.fill();
         });
 
-        // === ARM ===
+        // === Getting Points ===
         const shoulder =
-          dominantHandRef.current === "right" ? landmarks[12] : landmarks[11];
+          dominantHand === "right" ? landmarks[12] : landmarks[11];
         const rightShoulder = landmarks[12];
         const leftShoulder = landmarks[11];
-        const elbow =
-          dominantHandRef.current === "right" ? landmarks[14] : landmarks[13];
-        const wrist =
-          dominantHandRef.current === "right" ? landmarks[16] : landmarks[15];
+        const elbow = dominantHand === "right" ? landmarks[14] : landmarks[13];
+        const wrist = dominantHand === "right" ? landmarks[16] : landmarks[15];
         const rightAnkle = landmarks[28];
         const leftAnkle = landmarks[27];
         const rightKnee = landmarks[26];
         const leftKnee = landmarks[25];
         const leftHip = landmarks[23];
 
+        rightShoulderRef.current = rightShoulder;
+        leftShoulderRef.current = leftShoulder;
+        rightElbowRef.current = elbow;
+        leftElbowRef.current = landmarks[13];
+
+        // Checking if points are not at all detected
         if (
           !rightShoulder ||
           !leftShoulder ||
@@ -218,6 +249,7 @@ export default function Form({
           setErrorFeedback("⚠️ Unable to detect all keypoints.");
         }
 
+        // Checking if points are barely detected
         if (rightAnkle.visibility < 0.1 || leftAnkle.visibility < 0.1) {
           setAnkleFeedback("⚠️ Ankles not visible enough.");
         }
@@ -232,18 +264,21 @@ export default function Form({
           setBendFeedback("⚠️ Unable to detect knee bend.");
         }
 
-        if (
-          rightShoulder.visibility < 0.4 ||
-          leftShoulder.visibility < 0.4 ||
-          elbow.visibility < 0.4 ||
-          wrist.visibility < 0.4 ||
-          rightAnkle.visibility < 0.4 ||
-          leftAnkle.visibility < 0.4 ||
-          rightKnee.visibility < 0.4 ||
-          leftKnee.visibility < 0.4
-        ) {
-          setErrorFeedback("⚠️ Keypoints not visible enough.");
-        }
+        setErrorFeedback(
+          checkKeypointVisibility(
+            {
+              rightShoulder,
+              leftShoulder,
+              elbow,
+              wrist,
+              rightAnkle,
+              leftAnkle,
+              rightKnee,
+              leftKnee,
+            },
+            1,
+          ),
+        );
 
         if (leftAnkle.visibility > 0.1 && rightAnkle.visibility > 0.1) {
           ankleDistanceRef.current = calculateDistance(rightAnkle, leftAnkle);
@@ -262,11 +297,10 @@ export default function Form({
           leftKnee.visibility > 0.1 &&
           leftAnkle.visibility > 0.1
         ) {
-          kneeAngleRef.current = calculateKneeAngle(
-            leftHip,
-            leftKnee,
-            leftAnkle,
-          );
+          let kneeAngle = calculateKneeAngle(leftHip, leftKnee, leftAnkle);
+          if (kneeAngle < lowestKneeAngleRef.current) {
+            lowestKneeAngleRef.current = kneeAngle;
+          }
         }
         if (
           rightShoulder.visibility > 0.1 &&
@@ -286,50 +320,24 @@ export default function Form({
           `Shoulder distance is ${shoulderDistanceRef} pixels.`,
         ]);
 
-        // console.log("Calculating flare and angle");
-
         topFramesRef.current.push({
           wristY: wrist.y,
           elbowAngle: elbowAngleRef.current,
           flare: flareDistance,
         });
 
-        if (flareDistance > 0.15) {
-          setFlareFeedback("⚠️ Elbow is flaring too wide");
-        } else if (elbowAngleRef.current && elbowAngleRef.current < 40) {
-          setFlareFeedback("⚠️ Arm angle too tight");
-        } else {
-          setFlareFeedback("✅ Good elbow alignment");
-        }
+        // Checking calculations and giving feedback. See in calculations.tsx how the feedback is determined
+        setFlareFeedback(getFlareFeedback(flareDistance, elbowAngleRef));
 
-        if (
-          ankleDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          ankleDistanceRef.current < shoulderDistanceRef.current - 1
-        ) {
-          setAnkleFeedback((prev) => prev + "⚠️ Feet are too close together");
-        } else if (
-          ankleDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          ankleDistanceRef.current > shoulderDistanceRef.current + 1
-        ) {
-          setAnkleFeedback((prev) => prev + "⚠️ Feet are too far apart");
-        }
-        if (
-          kneeDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          kneeDistanceRef.current < shoulderDistanceRef.current - 6
-        ) {
-          setKneeFeedback((prev) => prev + "⚠️ Knees are too close together");
-        } else if (
-          kneeDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          kneeDistanceRef.current > shoulderDistanceRef.current + 6
-        ) {
-          setKneeFeedback((prev) => prev + "⚠️ Knees are too far apart");
-        }
-        if (kneeAngleRef.current !== null) {
-          setBendFeedback(getKneeFeedback(kneeAngleRef.current));
+        setAnkleFeedback(
+          getAnkleFeedback(ankleDistanceRef, shoulderDistanceRef),
+        );
+
+        setKneeFeedback(
+          getKneeDistanceFeedback(kneeDistanceRef, shoulderDistanceRef),
+        );
+        if (lowestKneeAngleRef.current !== null) {
+          setBendFeedback(getBendFeedback(lowestKneeAngleRef.current));
         }
       }
 
@@ -340,7 +348,7 @@ export default function Form({
     detectRef.current = detect;
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [videoURL]);
+  }, [videoURL, dominantHand]);
 
   const rewatchFeedback = () => {
     if (!videoRef.current) return;
@@ -372,7 +380,11 @@ export default function Form({
       angleScore={angleScore}
       bendScore={bendScore}
       similarity={similarityRef}
-      dominantHandRef={dominantHandRef}
+      setDominantHand={setDominantHand}
+      rightShoulderRef={rightShoulderRef}
+      leftShoulderRef={leftShoulderRef}
+      rightElbowRef={rightElbowRef}
+      leftElbowRef={leftElbowRef}
     />
   );
 }

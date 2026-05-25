@@ -6,6 +6,14 @@ html, body, #root {
   height: 100%;
 }
 
+:root {
+  --bottom-bar-height: clamp(6.75rem, 12dvh, 7.25rem);
+  --bottom-bar-gap: clamp(0.5rem, 2dvh, 1rem);
+  --bottom-bar-reserved-space: calc(
+    var(--bottom-bar-height) + var(--bottom-bar-gap) + env(safe-area-inset-bottom, 0px)
+  );
+}
+
 .court-lines {
   background-image: url("/src/assets/BasketballCourt.png");
   background-repeat: repeat;

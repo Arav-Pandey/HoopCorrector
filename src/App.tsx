@@ -11,10 +11,13 @@ import HomeLogo from "./HomeLogo.tsx";
 import HoverSettings from "./HoverSettings.tsx";
 import BackgroundLayout from "./BackgroundLayout.tsx";
 import FormLive from "./Form/FormLive.tsx";
-import GeminiButton from "./GeminiButton.tsx";
+import Playmaking from "./PlayMaking/Playmaking.tsx";
+import BottomBar from "./BottomBar.tsx";
+import Demo from "./Demo.tsx";
 
 export default function App() {
-  const [active, setActive] = React.useState("Home");
+  const [active, setActive] = useState("Home");
+  const [demo, setDemo] = useState(false);
   const [videoURL, setVideoURL] = useState<string>("");
   const [contextList, setContextList] = useState<string[]>([]);
 
@@ -26,8 +29,21 @@ export default function App() {
             <HomeLogo active={active} setActive={setActive} />
           </HoverSettings>
         </div>
+        <div className="fixed right-10 top-5 z-50 text-orange-500">
+          <button
+            className="text-lg font-bold cursor-pointer text-slate-800 dark:text-slate-100 bg-slate-200
+             dark:bg-slate-700 px-3 py-1 rounded-lg transition-all ease-in-out duration-300 hover:bg-slate-300
+              dark:hover:bg-slate-600 hover:scale-110 active:scale-95 transform-gpu"
+            onClick={() => setDemo(true)}
+          >
+            <strong>Demo</strong>
+          </button>
+        </div>
 
-        <div className="min-h-screen flex items-center justify-center text-white">
+        <div
+          className="box-border flex min-h-dvh items-center justify-center text-white"
+          style={{ paddingBottom: "var(--bottom-bar-reserved-space)" }}
+        >
           <main className="mx-auto w-full p-4">
             {active === "Form" ? (
               <Form
@@ -59,11 +75,21 @@ export default function App() {
               <Arc videoUrl={videoURL} />
             ) : active === "FormLive" ? (
               <FormLive />
+            ) : active === "Playmaking" ? (
+              <Playmaking />
             ) : (
               <Overlay setActive={setActive} />
             )}
           </main>
         </div>
+        <BottomBar
+          active={active}
+          setActive={setActive}
+          videoURL={videoURL}
+          contextList={contextList}
+          setContextList={setContextList}
+        />
+        <Demo demo={demo} setDemo={setDemo} />
       </div>
     </BackgroundLayout>
   );

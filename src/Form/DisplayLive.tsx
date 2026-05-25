@@ -8,7 +8,9 @@ interface Props {
   flareFeedback: string | null;
   bendFeedback: string | null;
   errorFeedback: string | null;
-  dominantHandRef: React.RefObject<"left" | "right">;
+  setDominantHand: React.Dispatch<
+    React.SetStateAction<"left" | "right" | null>
+  >;
 }
 
 export default function DisplayLive({
@@ -18,12 +20,12 @@ export default function DisplayLive({
   kneeFeedback,
   flareFeedback,
   errorFeedback,
-  dominantHandRef,
+  setDominantHand,
   bendFeedback,
 }: Props) {
   return (
     <div className="flex flex-col items-center w-full">
-      <HandOverlay dominantHandRef={dominantHandRef} />
+      <HandOverlay setDominantHand={setDominantHand} />
       {/* Video + Canvas wrapper */}
       <div className="relative w-[640px] h-[480px] mx-auto">
         {/*LIVE CAMERA FEED*/}
@@ -46,11 +48,32 @@ export default function DisplayLive({
 
       {/* Feedback text */}
       <div className="mt-2 text-base font-bold text-center flex flex-col gap-4">
-        <p>Ankle placement feedback: {ankleFeedback}</p>
-        <p>Knee placement feedback: {kneeFeedback}</p>
-        <p>Elbow alignment feedback: {flareFeedback}</p>
-        <p>Knee bend feedback: {bendFeedback}</p>
-        <p>Error Feedback: {errorFeedback}</p>
+        <p>
+          Ankle placement feedback:{" "}
+          {ankleFeedback === null || ankleFeedback === ""
+            ? "N/A"
+            : ankleFeedback}
+        </p>
+        <p>
+          Knee placement feedback:{" "}
+          {kneeFeedback === null || kneeFeedback === "" ? "N/A" : kneeFeedback}
+        </p>
+        <p>
+          Elbow alignment feedback:{" "}
+          {flareFeedback === null || flareFeedback === ""
+            ? "N/A"
+            : flareFeedback}
+        </p>
+        <p>
+          Knee bend feedback:{" "}
+          {bendFeedback === null || bendFeedback === "" ? "N/A" : bendFeedback}
+        </p>
+        <p>
+          Error Feedback:{" "}
+          {errorFeedback === null || errorFeedback === ""
+            ? "N/A"
+            : errorFeedback}
+        </p>
       </div>
     </div>
   );

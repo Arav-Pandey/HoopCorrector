@@ -3,10 +3,12 @@ import { MdBackHand } from "react-icons/md";
 import { IoHandLeft } from "react-icons/io5";
 
 interface Props {
-  dominantHandRef: React.RefObject<"left" | "right">;
+  setDominantHand: React.Dispatch<
+    React.SetStateAction<"left" | "right" | null>
+  >;
 }
 
-export default function HandOverlay({ dominantHandRef }: Props) {
+export default function HandOverlay({ setDominantHand }: Props) {
   const [vis, setVis] = useState(true);
 
   return (
@@ -40,7 +42,7 @@ export default function HandOverlay({ dominantHandRef }: Props) {
             id="arc-btn"
             className="rounded overflow-hidden cursor-pointer flex flex-col gap-1 items-center mr-5 font-bold"
             onClick={() => {
-              dominantHandRef.current = "left";
+              setDominantHand("left");
               console.log("Dominant Hand:", "left");
               setVis(false);
             }}
@@ -55,7 +57,7 @@ export default function HandOverlay({ dominantHandRef }: Props) {
             id="form-btn"
             className="rounded overflow-hidden cursor-pointer items-center flex flex-col gap-1 ml-5 font-bold"
             onClick={() => {
-              dominantHandRef.current = "right";
+              setDominantHand("right");
               setVis(false);
             }}
           >

@@ -1,4 +1,17 @@
-export function getSimilarity(user: any, curry: any) {
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+
+type user = {
+  wristY: number;
+  elbowAngle: number;
+  flare: number;
+  kneeAngle: number;
+};
+type curry = {
+  flare: number;
+  elbowAngle: number;
+};
+
+export function getSimilarity(user: user, curry: curry) {
   function normalize(diff: number, tolerance: number) {
     return Math.max(0, 1 - diff / tolerance);
   }
@@ -52,6 +65,15 @@ export function scoreElbowAngle(angle: number): number {
   return 40;
 }
 
+export function scoreBendAngle(angle: number): number {
+  if (angle >= 110 && angle <= 140) return 100; // ideal bend
+  if (angle >= 100 && angle < 110) return 85; // slightly too much bend
+  if (angle > 140 && angle <= 155) return 85; // slightly too little bend
+  if (angle >= 90 && angle < 100) return 65; // too deep
+  if (angle > 155 && angle <= 170) return 65; // too straight
+  return 40; // extreme cases
+}
+
 export function calculateKneeAngle(
   a: { x: number; y: number },
   b: { x: number; y: number },
@@ -79,17 +101,106 @@ export function calculateKneeAngle(
   return (angleRad * 180) / Math.PI;
 }
 
-export function getKneeFeedback(angle: number) {
+export function getBendFeedback(angle: number) {
   if (angle > 145) return "Bend more";
-  if (angle < 105) return "Too much bend";
+  if (angle < 80) return "Too much bend";
   return "Good bend";
 }
 
-export function scoreBendAngle(angle: number): number {
-  if (angle >= 110 && angle <= 140) return 100; // ideal bend
-  if (angle >= 100 && angle < 110) return 85; // slightly too much bend
-  if (angle > 140 && angle <= 155) return 85; // slightly too little bend
-  if (angle >= 90 && angle < 100) return 65; // too deep
-  if (angle > 155 && angle <= 170) return 65; // too straight
-  return 40; // extreme cases
+export function getFlareFeedback(
+  flareDistance: number,
+  elbowAngleRef: React.RefObject<number | null>,
+) {
+  if (flareDistance > 0.15) {
+    return "⚠️ Elbow is flaring too wide";
+  } else if (elbowAngleRef.current && elbowAngleRef.current < 40) {
+    return "⚠️ Arm angle too tight";
+  } else {
+    return "✅ Good elbow alignment";
+  }
+}
+
+export function getAnkleFeedback(
+  ankleDistance: React.RefObject<number | null>,
+  shoulderDistance: React.RefObject<number | null>,
+) {
+  if (
+    ankleDistance.current !== null &&
+    shoulderDistance.current !== null &&
+    ankleDistance.current < shoulderDistance.current - 1
+  ) {
+    return "⚠️ Feet are too close together";
+  } else if (
+    ankleDistance.current !== null &&
+    shoulderDistance.current !== null &&
+    ankleDistance.current > shoulderDistance.current + 1
+  ) {
+    return "⚠️ Feet are too far apart";
+  }
+  return "✅ Good feet placement";
+}
+
+export function getKneeDistanceFeedback(
+  kneeDistanceRef: React.RefObject<number | null>,
+  shoulderDistanceRef: React.RefObject<number | null>,
+) {
+  if (
+    kneeDistanceRef.current === null ||
+    shoulderDistanceRef.current === null
+  ) {
+    return "⚠️ Unable to detect knee placement.";
+  }
+  if (
+    kneeDistanceRef.current !== null &&
+    shoulderDistanceRef.current !== null &&
+    kneeDistanceRef.current < shoulderDistanceRef.current - 6
+  ) {
+    return "⚠️ Knees are too close together";
+  } else if (
+    kneeDistanceRef.current !== null &&
+    shoulderDistanceRef.current !== null &&
+    kneeDistanceRef.current > shoulderDistanceRef.current + 6
+  ) {
+    return "⚠️ Knees are too far apart";
+  }
+  return "✅ Good knee placement";
+}
+
+interface KeypointVisibilityProps {
+  rightShoulder: NormalizedLandmark;
+  leftShoulder: NormalizedLandmark;
+  elbow: NormalizedLandmark;
+  wrist: NormalizedLandmark;
+  rightAnkle: NormalizedLandmark;
+  leftAnkle: NormalizedLandmark;
+  rightKnee: NormalizedLandmark;
+  leftKnee: NormalizedLandmark;
+}
+
+export function checkKeypointVisibility(
+  {
+    rightShoulder,
+    leftShoulder,
+    elbow,
+    wrist,
+    rightAnkle,
+    leftAnkle,
+    rightKnee,
+    leftKnee,
+  }: KeypointVisibilityProps,
+  threshold: number,
+) {
+  if (
+    rightShoulder.visibility < threshold ||
+    leftShoulder.visibility < threshold ||
+    elbow.visibility < threshold ||
+    wrist.visibility < threshold ||
+    rightAnkle.visibility < threshold ||
+    leftAnkle.visibility < threshold ||
+    rightKnee.visibility < threshold ||
+    leftKnee.visibility < threshold
+  ) {
+    return "⚠️ Keypoints not visible enough.";
+  }
+  return null;
 }

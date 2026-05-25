@@ -32,7 +32,7 @@ export default function HoverSettings({ name, children }: Props) {
       {children}
 
       {hovered && (
-        <span className="absolute top-full left-1/2 -translate-x-1/2 text-sm bg-gray-800 text-white px-2 py-1 rounded shadow-lg z-10 whitespace-nowrap mt-2">
+        <span className="absolute top-full left-1/2 -translate-x-1/2 text-sm bg-gray-800 text-white px-2 py-1 rounded shadow-lg z-10 whitespace-nowrap">
           {name}
         </span>
       )}

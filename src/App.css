@@ -40,3 +40,14 @@
 .read-the-docs {
   color: #888;
 }
+
+.zigzag-line {
+  height: 20px;
+  width: 100%;
+  background: 
+    linear-gradient(135deg, #000 25%, transparent 25%) -10px 0,
+    linear-gradient(225deg, #000 25%, transparent 25%) -10px 0,
+    linear-gradient(315deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, #000 25%, transparent 25%);
+  background-size: 20px 20px;
+}

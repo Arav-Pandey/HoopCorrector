@@ -12,10 +12,10 @@ export default function FormLive() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [ankleFeedback, setAnkleFeedback] = useState("All Good!");
-  const [kneeFeedback, setKneeFeedback] = useState("All Good!");
-  const [flareFeedback, setFlareFeedback] = useState("All Good!");
-  const [bendFeedback, setBendFeedback] = useState("All Good!");
+  const [ankleFeedback, setAnkleFeedback] = useState("");
+  const [kneeFeedback, setKneeFeedback] = useState("");
+  const [flareFeedback, setFlareFeedback] = useState("");
+  const [bendFeedback, setBendFeedback] = useState("");
   const [errorFeedback, setErrorFeedback] = useState("");
   const ankleDistanceRef = useRef<number | null>(null);
   const kneeDistanceRef = useRef<number | null>(null);
@@ -23,11 +23,17 @@ export default function FormLive() {
   const flareDistanceRef = useRef<number | null>(null);
   const elbowAngleRef = useRef<number | null>(null);
   const kneeAngleRef = useRef<number | null>(null);
-  const dominantHandRef = useRef<"left" | "right">("right");
+  const [dominantHand, setDominantHand] = useState<"left" | "right" | null>(
+    null,
+  );
 
   const detectRef = useRef<() => void>(() => {});
 
   useEffect(() => {
+    if (dominantHand === null) {
+      console.log("Dominant hand not selected yet.", dominantHand);
+      return;
+    }
     let poseLandmarker: PoseLandmarker;
     let animationFrameId: number;
 
@@ -103,23 +109,18 @@ export default function FormLive() {
         });
 
         const shoulder =
-          dominantHandRef.current === "right" ? landmarks[12] : landmarks[11];
+          dominantHand === "right" ? landmarks[12] : landmarks[11];
         const rightShoulder = landmarks[12];
         const leftShoulder = landmarks[11];
-        const elbow =
-          dominantHandRef.current === "right" ? landmarks[14] : landmarks[13];
-        const wrist =
-          dominantHandRef.current === "right" ? landmarks[16] : landmarks[15];
+        const elbow = dominantHand === "right" ? landmarks[14] : landmarks[13];
+        const wrist = dominantHand === "right" ? landmarks[16] : landmarks[15];
         const rightAnkle = landmarks[28];
         const leftAnkle = landmarks[27];
         const rightKnee = landmarks[26];
         const leftKnee = landmarks[25];
-        const hip =
-          dominantHandRef.current === "right" ? landmarks[24] : landmarks[23];
-        const knee =
-          dominantHandRef.current === "right" ? landmarks[26] : landmarks[25];
-        const ankle =
-          dominantHandRef.current === "right" ? landmarks[28] : landmarks[27];
+        const hip = dominantHand === "right" ? landmarks[24] : landmarks[23];
+        const knee = dominantHand === "right" ? landmarks[26] : landmarks[25];
+        const ankle = dominantHand === "right" ? landmarks[28] : landmarks[27];
 
         const shoulderVisible = shoulder.visibility > 0.1;
         const elbowVisible = elbow.visibility > 0.1;
@@ -277,7 +278,7 @@ export default function FormLive() {
     detectRef.current = detect;
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, []);
+  }, [dominantHand]);
 
   return (
     <DisplayLive
@@ -288,7 +289,7 @@ export default function FormLive() {
       flareFeedback={flareFeedback}
       bendFeedback={bendFeedback}
       errorFeedback={errorFeedback}
-      dominantHandRef={dominantHandRef}
+      setDominantHand={setDominantHand}
     />
   );
 }
