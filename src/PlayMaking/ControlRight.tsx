@@ -51,7 +51,7 @@ export default function ControlRight({
       <HoverSettings name={name}>
         <button
           onClick={onClick}
-          className="flex h-12 w-12 items-center justify-center rounded-2xl text-white transition hover:bg-white/15 active:scale-95 cursor-pointer mt-0 mb-0"
+          className="flex h-10 sm:h-12 w-10 sm:w-12 items-center justify-center rounded-lg sm:rounded-2xl text-white transition hover:bg-white/15 active:scale-95 cursor-pointer"
           aria-label={name}
         >
           {Icon}
@@ -64,79 +64,79 @@ export default function ControlRight({
     <>
       {controlVis ? (
         <div
-          className={`fixed top-1/2 right-0 z-50 -translate-y-1/2  ${controlVis ? "" : "hidden"}`}
+          className={`fixed top-1/2 right-0 z-50 -translate-y-1/2 px-2 sm:px-0`}
         >
-          <div className="flex flex-col items-center justify-center rounded-3xl border border-white/15 bg-gray-800/80 px-3 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div className="flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-white/15 bg-gray-800/80 px-2 sm:px-3 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
             {/* Centered Heading */}
             <div className="flex flex-row items-center justify-around w-full">
-              <h3 className=" text-white font-bold text-center">Controls</h3>
+              <h3 className="text-white font-bold text-center text-xs sm:text-sm">Controls</h3>
             </div>
 
             {/* Two Column Container */}
-            <div className="flex flex-row gap-4 items-start">
+            <div className="flex flex-row gap-2 sm:gap-4 items-start">
               {/* Column 1 */}
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-1 sm:gap-2">
                 {handleAddButton(
                   "Add teammate",
                   onAddTeammate,
-                  <HiOutlineUsers size={24} />,
+                  <HiOutlineUsers size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">
+                <span className="text-xs text-white text-center line-clamp-1">
                   Add teammate
                 </span>
                 {handleAddButton(
                   "Add opponent",
                   onAddOpponent,
-                  <HiOutlineUserPlus size={24} />,
+                  <HiOutlineUserPlus size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">
+                <span className="text-xs text-white text-center line-clamp-1">
                   Add opponent
                 </span>
                 {handleAddButton(
                   "Add ball",
                   onAddBall,
-                  <MdOutlineSportsBasketball size={24} />,
+                  <MdOutlineSportsBasketball size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">Add ball</span>
+                <span className="text-xs text-white text-center">Ball</span>
                 {handleAddButton(
                   "Add pair",
                   onAddPair,
-                  <GiTwoShadows size={24} />,
+                  <GiTwoShadows size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">Add pair</span>
+                <span className="text-xs text-white text-center">Pair</span>
 
                 {handleAddButton(
                   "Hide Controls",
                   () => setControlVis(!controlVis),
-                  <RiMenuFold4Line size={24} />,
+                  <RiMenuFold4Line size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">
-                  Hide Controls
+                <span className="text-xs text-white text-center line-clamp-1">
+                  Hide
                 </span>
               </div>
 
               {/* Column 2 */}
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-1 sm:gap-2">
                 {handleAddButton(
                   "Remove teammate",
                   onRemoveTeammate,
-                  <MdOutlineGroupRemove size={24} />,
+                  <MdOutlineGroupRemove size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">
-                  Remove teammate
+                <span className="text-xs text-white text-center line-clamp-1">
+                  Remove mate
                 </span>
                 {handleAddButton(
                   "Remove opponent",
                   onRemoveOpponent,
-                  <MdOutlinePersonRemove size={24} />,
+                  <MdOutlinePersonRemove size={20} className="sm:w-6 sm:h-6" />,
                 )}
-                <span className="text-xs text-white text-center">
-                  Remove opponent
+                <span className="text-xs text-white text-center line-clamp-1">
+                  Remove opp
                 </span>
                 {handleAddButton(
                   "Remove ball",
                   onRemoveBall,
-                  <MdRemoveCircleOutline size={24} />,
+                  <MdRemoveCircleOutline size={20} className="sm:w-6 sm:h-6" />,
                 )}
                 <span className="text-xs text-white text-center">
                   Remove ball
@@ -144,36 +144,36 @@ export default function ControlRight({
                 {handleAddButton(
                   "Remove Line",
                   onRemoveLine,
-                  <FaMinus size={24} fill="white" />,
+                  <FaMinus size={18} fill="white" />,
                 )}
                 <span className="text-xs text-white text-center">
-                  Remove Line
+                  Line
                 </span>
                 {handleAddButton(
                   "Reset board",
                   onReset,
-                  <RiResetLeftLine size={24} />,
+                  <RiResetLeftLine size={20} className="sm:w-6 sm:h-6" />,
                 )}
                 <span className="text-xs text-white text-center">
-                  Reset board
+                  Reset
                 </span>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="fixed top-10 right-10 z-50">
+        <div className="fixed top-6 sm:top-10 right-2 sm:right-10 z-50">
           <button
-            className="bg-gray-500 rounded-xl p-2 cursor-pointer hover:bg-gray-600 transition"
+            className="bg-gray-500 rounded-lg sm:rounded-xl p-1.5 sm:p-2 cursor-pointer hover:bg-gray-600 transition active:scale-95"
             onClick={() => setControlVis(!controlVis)}
             onMouseEnter={() => setShowMenuTooltip(true)}
             onMouseLeave={() => setShowMenuTooltip(false)}
             aria-label="Show Controls"
           >
-            <MdMenuOpen size={40} />
+            <MdMenuOpen size={24} className="sm:w-10 sm:h-10" />
           </button>
           {showMenuTooltip && (
-            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 text-sm bg-gray-800 text-white px-2 py-1 rounded shadow-lg whitespace-nowrap">
+            <span className="absolute bottom-full right-1/2 translate-x-1/2 mb-2 text-xs sm:text-sm bg-gray-800 text-white px-2 py-1 rounded shadow-lg whitespace-nowrap">
               Show Controls
             </span>
           )}

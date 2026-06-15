@@ -1,8 +1,14 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
   text-align: center;
+}
+
+@media (min-width: 640px) {
+  #root {
+    padding: 2rem;
+  }
 }
 
 .logo {
@@ -50,4 +56,31 @@
     linear-gradient(315deg, #000 25%, transparent 25%),
     linear-gradient(45deg, #000 25%, transparent 25%);
   background-size: 20px 20px;
+}
+
+/* Demo Modal Animations */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.demo-modal-enter {
+  animation: slideInFromRight 0.4s ease-in-out forwards;
+}
+
+.demo-modal-exit {
+  animation: slideOutToLeft 0.4s ease-in-out forwards;
 }

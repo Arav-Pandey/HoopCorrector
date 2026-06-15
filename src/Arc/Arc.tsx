@@ -4,9 +4,10 @@ import Display from "./Display";
 
 interface Props {
   videoUrl: string;
+  videoFile: File | null;
 }
 
-export default function Arc({ videoUrl }: Props) {
+export default function Arc({ videoUrl, videoFile }: Props) {
   const connectionRef = useRef<Awaited<
     // Awaited because webrtc.useVideoFile is an async function
     ReturnType<typeof webrtc.useVideoFile> // typeof means "Give me a type of this function" and ReturnType gets the return type of the function
@@ -39,18 +40,31 @@ export default function Arc({ videoUrl }: Props) {
   const positionRef = useRef<"SG" | "PG" | "PF" | "C">("SG");
 
   useEffect(() => {
-    if (!videoUrl) return;
+    if (!videoUrl && !videoFile) return;
 
     async function startProcessing() {
-      const res = await fetch(videoUrl); // Downloads the video. fetch() is a browser function used to request data from a URL.
-      const blob = await res.blob(); // converts the binary response to a file that is then stored in browser memory.
+      try {
+        let file: File;
+        
+        // Prefer using the File object directly (better for iPad/Safari)
+        if (videoFile) {
+          file = videoFile;
+        } else {
+          // Fallback to fetching from URL
+          const res = await fetch(videoUrl);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch video: ${res.statusText}`);
+          }
+          const blob = await res.blob();
+          file = new File([blob], "video.mp4", { type: blob.type || "video/mp4" });
+        }
 
-      const file = new File([blob], "video.mp4", {
-        type: blob.type || "video/mp4",
-      }); // Converts the Blob into a File. A File is basically the same thing as a Blob but it includes filename + metadata
-
-      fileRef.current = file;
-      processFile(file);
+        fileRef.current = file;
+        processFile(file);
+      } catch (error) {
+        console.error("Error loading video:", error);
+        alert("Failed to load video. Please try recording again.");
+      }
     }
 
     if (highestBasketball !== null && rimHeight !== null) {
@@ -61,7 +75,7 @@ export default function Arc({ videoUrl }: Props) {
     }
 
     startProcessing();
-  }, [videoUrl]);
+  }, [videoUrl, videoFile]);
 
   function getArcFeedback(
     highestBasketball: number,

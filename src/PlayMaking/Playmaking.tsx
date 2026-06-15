@@ -83,62 +83,61 @@ export default function Playmaking() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6">
-      <h1 className="text-4xl font-bold tracking-tight">Playmaking</h1>
-      <div className="w-full max-w-4xl flex justify-center">
+    <div className="flex min-h-screen w-full flex-col items-center justify-start gap-4 sm:gap-6 px-2 sm:px-0 pt-4 sm:pt-6">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">Playmaking</h1>
+      <div className="w-full flex justify-center overflow-x-auto">
         <LineDrawerCurve
           reset={reset}
           removeLines={removeLines}
           setRemoveLines={setRemoveLines}
-          // pass={pass}
           onLatestPass={onLatestPass}
         >
-          <div className="relative">
+          <div className="relative min-w-full sm:w-full">
             <img
               src={HalfCourt}
               alt="Half Court"
-              className="h-200 w-1000 mb-60"
+              className="w-full h-auto mb-40 sm:mb-60"
             />
 
-            <div className="absolute left-20 top-20">
+            <div className="absolute left-4 sm:left-20 top-4 sm:top-20">
               {teamPlayers.map((player) => (
-                <div className="ml-10" key={player.id}>
+                <div className="ml-4 sm:ml-10" key={player.id}>
                   <Draggable key={player.id}>
                     <LineStart>
-                      <span className="text-gray-400">O</span>
+                      <span className="text-gray-400 text-lg sm:text-xl">O</span>
                     </LineStart>
                   </Draggable>
                 </div>
               ))}
             </div>
 
-            <div className="absolute left-40 top-20">
+            <div className="absolute left-16 sm:left-40 top-4 sm:top-20">
               {opponentPlayers.map((player) => (
-                <div className="ml-10" key={player.id}>
+                <div className="ml-4 sm:ml-10" key={player.id}>
                   <Draggable key={player.id}>
                     <LineStart>
-                      <span className="text-gray-400">X</span>
+                      <span className="text-gray-400 text-lg sm:text-xl">X</span>
                     </LineStart>
                   </Draggable>
                 </div>
               ))}
             </div>
-            <div className="absolute left-60 top-20">
+            <div className="absolute left-28 sm:left-60 top-4 sm:top-20">
               {basketballs.map((basketball) => (
-                <div className="ml-10" key={basketball.id}>
+                <div className="ml-4 sm:ml-10" key={basketball.id}>
                   <Draggable key={basketball.id}>
                     <LineStart>
-                      <span className="text-gray-400">🏀</span>
+                      <span className="text-lg sm:text-xl">🏀</span>
                     </LineStart>
                   </Draggable>
                 </div>
               ))}
             </div>
-            <div className="absolute left-80 top-20">
+            <div className="absolute left-40 sm:left-80 top-4 sm:top-20">
               {shotSpots.map((spot) => (
-                <div className="ml-10" key={spot.id}>
+                <div className="ml-4 sm:ml-10" key={spot.id}>
                   <Draggable key={spot.id}>
-                    <PiCircleDashedFill fill="black" size={40} />
+                    <PiCircleDashedFill fill="black" size={20} className="sm:w-10 sm:h-10" />
                   </Draggable>
                 </div>
               ))}

@@ -3,70 +3,47 @@ import DeepBrain from "./assets/DeepBrain.png";
 import FormLive from "../src/Form/FormLive";
 import Form from "../src/Form/Form";
 import Home from "./Home";
-import { useState } from "react";
-import BrainOrange from "./assets/Brain_Orange.png";
-import DeepBrainOrange from "./assets/Deep_Brain_Orange.png";
+import Arc from "./Arc/Arc";
+import { GiBasketballBasket } from "react-icons/gi";
 
-type Tab = "Home" | "FormLive" | "Form";
+type Tab = "Home" | "FormLive" | "Form" | "Arc";
 
 interface Page {
   id: Tab;
   label: string;
   icon: React.ReactNode;
   content: React.ReactNode;
-  iconOrange: React.ReactNode;
 }
 
 const styles: Record<string, React.CSSProperties> = {
   shell: {
     position: "fixed",
-    bottom: "calc(var(--bottom-bar-gap) + env(safe-area-inset-bottom, 0px))",
+    bottom: 0,
     left: "50%",
     transform: "translateX(-50%)",
-    width: "min(100% - 1rem, 580px)",
+    width: "100%",
     maxWidth: 580,
     margin: "0 auto",
     background: "transparent",
     overflow: "hidden",
     zIndex: 1000,
-  },
-  pageArea: {
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pageContent: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 12,
-    color: "#6B7280",
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: 600,
-    color: "#111827",
-    margin: 0,
-  },
-  pageSubtitle: {
-    fontSize: 14,
-    color: "#9CA3AF",
-    margin: 0,
+    paddingBottom: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
   },
   bottomBar: {
-    height: "var(--bottom-bar-height)",
-    background: "rgba(15, 23, 42, 0.65)", // Transparent dark slate (or use #000000 at 0.65)
-    backdropFilter: "blur(16px)", // Slightly stronger blur for dark mode contrast
-    WebkitBackdropFilter: "blur(16px)", // Safari support
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)", // Subtle light border edge
-    borderRadius: "20px 20px 20px 20px",
+    height: 110,
+    background: "linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.8) 100%)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderTop: "1px solid rgba(248, 113, 113, 0.1)",
+    borderRadius: "24px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-around",
-    padding: "0 8px",
+    padding: "12px 12px",
     flexShrink: 0,
-    boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.4)", // Darker, deep shadow
+    boxShadow: "0 -20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
     width: "100%",
   },
   navButton: {
@@ -75,42 +52,42 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    padding: "8px 0",
+    gap: 6,
+    padding: "8px 4px",
     position: "relative",
     border: "none",
     background: "none",
-    cursor: "default",
+    cursor: "pointer",
     WebkitTapHighlightColor: "transparent",
+    transition: "all 0.3s ease",
   },
   navIcon: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: 62,
-    height: 62,
+    width: 56,
+    height: 56,
     objectFit: "contain",
+    cursor: "pointer",
   },
   navLabel: {
-    fontSize: 20,
-    fontWeight: 500,
-    letterSpacing: "0.02em",
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: "0.03em",
   },
   indicator: {
     position: "absolute",
-    bottom: 2,
+    bottom: 0,
     left: "50%",
-    width: 24,
-    height: 2.5,
-    background: "#F97316",
+    width: 28,
+    height: 3,
+    background: "linear-gradient(90deg, #F97316 0%, #FB923C 100%)",
     borderRadius: 99,
+    boxShadow: "0 0 12px rgba(249, 115, 22, 0.6)",
   },
-  navOrangeIcon: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 82,
-    height: 82,
+  navImage: {
+    width: 56,
+    height: 56,
     objectFit: "contain",
   },
 };
@@ -146,35 +123,23 @@ export default function BottomBar({
   contextList,
   setContextList,
 }: Props) {
-  const getColor = (id: string) => {
-    if (active === id) return "#F97316"; // active → solid orange
-    return "#9CA3AF"; // default → gray
-  };
   const PAGES: Page[] = [
     {
       id: "FormLive",
       label: "FormLive",
-      icon: <img src={Brain} alt="Brain" style={styles.navIcon} />,
+      icon: <img src={Brain} alt="Brain" style={styles.navImage} />,
       content: <FormLive />,
-      iconOrange: (
-        <img
-          src={BrainOrange}
-          alt="Orange_Brain"
-          style={styles.navOrangeIcon}
-        />
-      ),
     },
     {
       id: "Home",
       label: "Home",
       icon: <HomeIcon />,
       content: <Home setActive={setActive} />,
-      iconOrange: <HomeIcon />, // Home icon stays the same on hover/active
     },
     {
       id: "Form",
       label: "Deep Form Analysis",
-      icon: <img src={DeepBrain} alt="DeepBrain" style={styles.navIcon} />,
+      icon: <img src={DeepBrain} alt="DeepBrain" style={styles.navImage} />,
       content: (
         <Form
           setActive={setActive}
@@ -183,13 +148,12 @@ export default function BottomBar({
           setContextList={setContextList}
         />
       ),
-      iconOrange: (
-        <img
-          src={DeepBrainOrange}
-          alt="Orange_DeepBrain"
-          style={styles.navOrangeIcon}
-        />
-      ),
+    },
+    {
+      id: "Arc",
+      label: "Arc Analysis",
+      icon: <GiBasketballBasket size={42} />,
+      content: <Arc videoUrl={videoURL} />,
     },
   ];
 
@@ -206,33 +170,40 @@ export default function BottomBar({
               style={styles.navButton}
               aria-label={page.label}
               aria-current={isActive ? "page" : undefined}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(249, 115, 22, 0.1)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
+              }}
             >
               <span
                 style={{
                   ...styles.navIcon,
-                  color: getColor(page.id),
-                  transform: isActive ? "translateY(-1px)" : "translateY(0)",
-                  transition: "color 0.18s ease, transform 0.18s ease",
+                  color: isActive ? "#F97316" : "#9CA3AF",
+                  transform: isActive ? "translateY(-2px) scale(1.1)" : "translateY(0) scale(1)",
+                  transition: "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
                 }}
               >
-                {getColor(page.id) === "#F97316" ? page.iconOrange : page.icon}
+                {page.icon}
               </span>
               <strong
                 style={{
                   ...styles.navLabel,
-                  color: getColor(page.id),
-                  transition: "color 0.18s ease",
+                  color: isActive ? "#F97316" : "#9CA3AF",
+                  transition: "color 0.2s ease",
+                  textShadow: isActive ? "0 0 8px rgba(249, 115, 22, 0.3)" : "none",
                 }}
               >
                 {page.label}
               </strong>
-              {/* Orange underline indicator */}
+              {/* Orange gradient underline indicator */}
               <span
                 style={{
                   ...styles.indicator,
                   transform: `translateX(-50%) scaleX(${isActive ? 1 : 0})`,
                   transition:
-                    "transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
                 }}
               />
             </button>

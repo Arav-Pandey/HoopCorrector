@@ -21,20 +21,21 @@ export default function UploadButton({ setVideoURL }: Props) {
   };
 
   return (
-    <div>
+    <div className="flex items-center">
       {/* Icon */}
       <RiVideoUploadLine
-        size={40}
+        size={24}
+        className="sm:w-10 sm:h-10 w-6 h-6 cursor-pointer hover:text-orange-400 transition"
         onClick={handleIconClick}
-        style={{ cursor: "pointer" }}
       />
 
       {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
-        style={{ display: "none" }}
+        className="hidden"
         onChange={handleFileChange}
+        accept="video/*"
       />
     </div>
   );

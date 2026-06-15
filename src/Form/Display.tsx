@@ -49,15 +49,15 @@ export default function Display({
   leftElbowRef,
 }: Props) {
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full px-4 sm:px-6 py-6 sm:py-8">
       <HandOverlay setDominantHand={setDominantHand} />
-      {/* Video + Canvas wrapper */}
-      <div className="relative w-[640px] h-[480px] mx-auto">
+      {/* Video + Canvas wrapper - responsive aspect ratio */}
+      <div className="relative w-full max-w-2xl aspect-video bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
         <video
           ref={videoRef}
           playsInline
           muted
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className="absolute inset-0 w-full h-full object-contain"
         />
         <canvas
           ref={canvasRef}
@@ -70,65 +70,92 @@ export default function Display({
           />
         )}
       </div>
+      
       <button
         onClick={() => rewatchFeedback()}
-        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+        className="mt-6 sm:mt-8 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 text-sm sm:text-base font-semibold rounded-lg shadow-lg shadow-orange-500/25 hover:scale-[1.02] hover:brightness-110 transition active:scale-95"
       >
         Rewatch Feedback
       </button>
+      
       {/* Feedback text */}
-      <div className="mt-2 text-base font-bold text-center flex flex-col gap-4 mb-5">
-        <p>
-          Ankle placement feedback:{" "}
-          {ankleFeedback !== null && ankleFeedback !== ""
-            ? `${ankleFeedback}`
-            : "N/A"}
-        </p>
-        <p>
-          Knee placement feedback:{" "}
-          {kneeFeedback !== null && kneeFeedback !== ""
-            ? `${kneeFeedback}`
-            : "N/A"}
-        </p>
-        <p>
-          Elbow alignment feedback:{" "}
-          {flareFeedback !== null && flareFeedback !== ""
-            ? `${flareFeedback}`
-            : "N/A"}
-        </p>
-        <p>
-          Knee Bend feedback:{" "}
-          {bendFeedeback !== null && bendFeedeback !== ""
-            ? `${bendFeedeback}`
-            : "N/A"}
-        </p>
-        <p>
-          Elbow score:{" "}
-          {elbowScore !== null ? elbowScore.toFixed(2) + "%" : "N/A"}
-        </p>
-        <p>
-          Flare score:{" "}
-          {flareScore !== null ? flareScore.toFixed(2) + "%" : "N/A"}
-        </p>
-        <p>
-          Angle score:{" "}
-          {angleScore !== null ? angleScore.toFixed(2) + "%" : "N/A"}
-        </p>
-        <p>
-          Bend score: {bendScore !== null ? bendScore.toFixed(2) + "%" : "N/A"}
-        </p>
-        <p>
-          Similarity to Steph Curry's Shot:{" "}
-          {similarity.current !== null
-            ? similarity.current.toFixed(2) + "%"
-            : "N/A"}
-        </p>
-        <p>
-          Errors:{" "}
-          {errorFeedback === null || errorFeedback === ""
-            ? "N/A"
-            : errorFeedback}
-        </p>
+      <div className="mt-8 sm:mt-12 w-full max-w-4xl mx-auto space-y-4 mb-5">
+        <div className="rounded-xl sm:rounded-2xl border border-orange-500/30 bg-slate-900/70 p-4 sm:p-6 backdrop-blur-xl space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Ankle Placement</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {ankleFeedback !== null && ankleFeedback !== ""
+                  ? `${ankleFeedback}`
+                  : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Knee Placement</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {kneeFeedback !== null && kneeFeedback !== ""
+                  ? `${kneeFeedback}`
+                  : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Elbow Alignment</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {flareFeedback !== null && flareFeedback !== ""
+                  ? `${flareFeedback}`
+                  : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Knee Bend</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {bendFeedeback !== null && bendFeedeback !== ""
+                  ? `${bendFeedeback}`
+                  : "N/A"}
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-white/10 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Elbow Score</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {elbowScore !== null ? elbowScore.toFixed(2) + "%" : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Flare Score</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {flareScore !== null ? flareScore.toFixed(2) + "%" : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Angle Score</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {angleScore !== null ? angleScore.toFixed(2) + "%" : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Bend Score</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {bendScore !== null ? bendScore.toFixed(2) + "%" : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Similarity</p>
+              <p className="text-white text-xs sm:text-sm font-medium mt-1">
+                {similarity.current !== null
+                  ? similarity.current.toFixed(2) + "%"
+                  : "N/A"}
+              </p>
+            </div>
+            {errorFeedback !== null && errorFeedback !== "" && (
+              <div>
+                <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Errors</p>
+                <p className="text-white text-sm font-medium mt-1">{errorFeedback}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       <GeminiButton setActive={setActive} />
     </div>
