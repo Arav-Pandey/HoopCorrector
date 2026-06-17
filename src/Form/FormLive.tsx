@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-import {
-  calculateAngle,
-  calculateDistance,
-  calculateKneeAngle,
-  scoreBendAngle,
-} from "./calculations";
+import { calculateAngle, calculateDistance } from "./calculations";
 import DisplayLive from "./DisplayLive";
 
 export default function FormLive() {
@@ -17,17 +12,9 @@ export default function FormLive() {
   const [flareFeedback, setFlareFeedback] = useState("");
   const [bendFeedback, setBendFeedback] = useState("");
   const [errorFeedback, setErrorFeedback] = useState("");
-  const ankleDistanceRef = useRef<number | null>(null);
-  const kneeDistanceRef = useRef<number | null>(null);
-  const shoulderDistanceRef = useRef<number | null>(null);
-  const flareDistanceRef = useRef<number | null>(null);
-  const elbowAngleRef = useRef<number | null>(null);
-  const kneeAngleRef = useRef<number | null>(null);
   const [dominantHand, setDominantHand] = useState<"left" | "right" | null>(
     null,
   );
-
-  const detectRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (dominantHand === null) {
@@ -39,13 +26,13 @@ export default function FormLive() {
 
     async function init() {
       const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm", // Downloads the WASM files so that the AI model can run in the browser
       );
 
       poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
         },
         runningMode: "VIDEO",
         numPoses: 1,
@@ -74,7 +61,7 @@ export default function FormLive() {
           video.play();
           detect();
         };
-      } catch (err) {
+      } catch {
         setErrorFeedback("⚠️ Unable to access camera.");
       }
     }
@@ -150,40 +137,32 @@ export default function FormLive() {
           keypointsVisibleEnough ? "" : "⚠️ Keypoints not visible enough.",
         );
 
+        let ankleDistance: number | null = null;
+        let kneeDistance: number | null = null;
+        let shoulderDistance: number | null = null;
+        let flareDistance: number | null = null;
+        let elbowAngle: number | null = null;
+        let kneeAngle: number | null = null;
+
         if (hipVisible && kneesVisible && anklesVisible) {
-          const bendAngle = calculateKneeAngle(hip, knee, ankle);
-          kneeAngleRef.current = bendAngle;
-        } else {
-          kneeAngleRef.current = null;
+          kneeAngle = calculateAngle(hip, knee, ankle);
         }
 
         if (shouldersVisible) {
-          shoulderDistanceRef.current = calculateDistance(
-            rightShoulder,
-            leftShoulder,
-          );
-        } else {
-          shoulderDistanceRef.current = null;
+          shoulderDistance = calculateDistance(rightShoulder, leftShoulder);
         }
 
         if (elbowVisible && shoulderVisible && wristVisible) {
-          elbowAngleRef.current = calculateAngle(shoulder, elbow, wrist);
-          flareDistanceRef.current = Math.abs(elbow.x - shoulder.x);
-        } else {
-          elbowAngleRef.current = null;
-          flareDistanceRef.current = null;
+          elbowAngle = calculateAngle(shoulder, elbow, wrist);
+          flareDistance = Math.abs(elbow.x - shoulder.x);
         }
 
         if (anklesVisible) {
-          ankleDistanceRef.current = calculateDistance(rightAnkle, leftAnkle);
-        } else {
-          ankleDistanceRef.current = null;
+          ankleDistance = calculateDistance(rightAnkle, leftAnkle);
         }
 
         if (kneesVisible) {
-          kneeDistanceRef.current = calculateDistance(rightKnee, leftKnee);
-        } else {
-          kneeDistanceRef.current = null;
+          kneeDistance = calculateDistance(rightKnee, leftKnee);
         }
 
         // --- ELBOW ---
@@ -191,21 +170,17 @@ export default function FormLive() {
           !elbowVisible ||
           !shoulderVisible ||
           !wristVisible ||
-          flareDistanceRef.current === null ||
-          elbowAngleRef.current === null
+          flareDistance === null ||
+          elbowAngle === null
         ) {
           setFlareFeedback(
             "⚠️ Arms not fully visible. Unable to calculate elbow feedback.",
           );
-        } else if (
-          flareDistanceRef.current !== null &&
-          flareDistanceRef.current > 0.15
-        ) {
+        } else if (flareDistance > 0.15) {
           setFlareFeedback("⚠️ Elbow too wide");
-        } else if (
-          elbowAngleRef.current !== null &&
-          elbowAngleRef.current < 40
-        ) {
+        } else if (flareDistance < 0.01) {
+          setFlareFeedback("⚠️ Elbow is too inside");
+        } else if (elbowAngle < 40) {
           setFlareFeedback("⚠️ Arm angle too tight");
         } else {
           setFlareFeedback("✅ Good elbow alignment");
@@ -214,23 +189,13 @@ export default function FormLive() {
         // --- ANKLES ---
         if (!anklesVisible) {
           setAnkleFeedback("⚠️ Unable to detect ankles.");
-        } else if (!shouldersVisible) {
+        } else if (!shouldersVisible || shoulderDistance === null) {
           setAnkleFeedback("⚠️ Unable to calculate shoulder distance.");
-        } else if (ankleDistanceRef.current === null) {
+        } else if (ankleDistance === null) {
           setAnkleFeedback("⚠️ Unable to calculate ankle distance.");
-        } else if (shoulderDistanceRef.current === null) {
-          setAnkleFeedback("⚠️ Unable to calculate shoulder distance.");
-        } else if (
-          ankleDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          ankleDistanceRef.current < shoulderDistanceRef.current - 0.05
-        ) {
+        } else if (ankleDistance < shoulderDistance - 0.05) {
           setAnkleFeedback("⚠️ Feet too close");
-        } else if (
-          ankleDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          ankleDistanceRef.current > shoulderDistanceRef.current + 0.05
-        ) {
+        } else if (ankleDistance > shoulderDistance + 0.05) {
           setAnkleFeedback("⚠️ Feet too far");
         } else {
           setAnkleFeedback("✅ Good foot spacing");
@@ -241,31 +206,23 @@ export default function FormLive() {
           setKneeFeedback("⚠️ Unable to detect knees.");
         } else if (!shouldersVisible) {
           setKneeFeedback("⚠️ Unable to calculate shoulder distance.");
-        } else if (kneeDistanceRef.current === null) {
+        } else if (!kneeDistance) {
           setKneeFeedback("⚠️ Unable to calculate knee distance.");
-        } else if (shoulderDistanceRef.current === null) {
+        } else if (!shoulderDistance) {
           setKneeFeedback("⚠️ Unable to calculate shoulder distance.");
-        } else if (
-          kneeDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          kneeDistanceRef.current < shoulderDistanceRef.current - 0.08
-        ) {
+        } else if (kneeDistance < shoulderDistance - 0.08) {
           setKneeFeedback("⚠️ Knees too close");
-        } else if (
-          kneeDistanceRef.current !== null &&
-          shoulderDistanceRef.current !== null &&
-          kneeDistanceRef.current > shoulderDistanceRef.current + 0.08
-        ) {
+        } else if (kneeDistance > shoulderDistance + 0.08) {
           setKneeFeedback("⚠️ Knees too far");
         } else {
           setKneeFeedback("✅ Good knee alignment");
         }
         // --- BEND ---
-        if (kneeAngleRef.current === null) {
+        if (!kneeAngle) {
           setBendFeedback("⚠️ Unable to calculate knee bend.");
-        } else if (kneeAngleRef.current < 90) {
+        } else if (kneeAngle < 90) {
           setBendFeedback("⚠️ Knee bend too deep.");
-        } else if (kneeAngleRef.current > 120) {
+        } else if (kneeAngle > 120) {
           setBendFeedback("⚠️ Knee bend too shallow.");
         } else {
           setBendFeedback("✅ Good knee bend.");
@@ -275,7 +232,6 @@ export default function FormLive() {
     }
 
     init();
-    detectRef.current = detect;
 
     return () => cancelAnimationFrame(animationFrameId);
   }, [dominantHand]);

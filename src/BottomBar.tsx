@@ -1,17 +1,21 @@
 import Brain from "./assets/Brain.png";
+import BrainOrange from "./assets/Brain_Orange.png";
 import DeepBrain from "./assets/DeepBrain.png";
+import DeepBrainOrange from "./assets/Deep_Brain_Orange.png";
 import FormLive from "../src/Form/FormLive";
 import Form from "../src/Form/Form";
 import Home from "./Home";
-import Arc from "./Arc/Arc";
-import { GiBasketballBasket } from "react-icons/gi";
+// import Arc from "./Arc/Arc";
+// import { GiBasketballBasket } from "react-icons/gi";
 
-type Tab = "Home" | "FormLive" | "Form" | "Arc";
+// type Tab = "Home" | "FormLive" | "Form" | "Arc";
+type Tab = "Home" | "FormLive" | "Form";
 
 interface Page {
   id: Tab;
   label: string;
   icon: React.ReactNode;
+  activeIcon?: React.ReactNode;
   content: React.ReactNode;
 }
 
@@ -71,7 +75,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   navLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: "0.03em",
   },
@@ -128,6 +132,7 @@ export default function BottomBar({
       id: "FormLive",
       label: "FormLive",
       icon: <img src={Brain} alt="Brain" style={styles.navImage} />,
+      activeIcon: <img src={BrainOrange} alt="Brain" style={styles.navImage} />,
       content: <FormLive />,
     },
     {
@@ -140,6 +145,7 @@ export default function BottomBar({
       id: "Form",
       label: "Deep Form Analysis",
       icon: <img src={DeepBrain} alt="DeepBrain" style={styles.navImage} />,
+      activeIcon: <img src={DeepBrainOrange} alt="DeepBrain" style={styles.navImage} />,
       content: (
         <Form
           setActive={setActive}
@@ -149,12 +155,12 @@ export default function BottomBar({
         />
       ),
     },
-    {
-      id: "Arc",
-      label: "Arc Analysis",
-      icon: <GiBasketballBasket size={42} />,
-      content: <Arc videoUrl={videoURL} />,
-    },
+    // {
+    //   id: "Arc",
+    //   label: "Arc Analysis",
+    //   icon: <GiBasketballBasket size={42} />,
+    //   content: <Arc videoUrl={videoURL} />,
+    // },
   ];
 
   return (
@@ -185,7 +191,7 @@ export default function BottomBar({
                   transition: "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
                 }}
               >
-                {page.icon}
+                {isActive && page.activeIcon ? page.activeIcon : page.icon}
               </span>
               <strong
                 style={{

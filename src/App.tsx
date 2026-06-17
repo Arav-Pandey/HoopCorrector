@@ -5,8 +5,8 @@ import Feedback from "./Feedback.tsx";
 import Home from "./Home.tsx";
 import Overlay from "./Overlay.tsx";
 import FormHome from "./Form/FormHome.tsx";
-import ArcHome from "./Arc/ArcHome.tsx";
-import Arc from "./Arc/Arc.tsx";
+// import ArcHome from "./Arc/ArcHome.tsx";
+// import Arc from "./Arc/Arc.tsx";
 import BackgroundLayout from "./BackgroundLayout.tsx";
 import FormLive from "./Form/FormLive.tsx";
 import Playmaking from "./PlayMaking/Playmaking.tsx";
@@ -16,7 +16,7 @@ import Demo from "./Demo.tsx";
 export default function App() {
   const [active, setActive] = useState("Home");
   const [videoURL, setVideoURL] = useState<string>("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  // const [videoFile, setVideoFile] = useState<File | null>(null);
   const [contextList, setContextList] = useState<string[]>([]);
   const [showDemo, setShowDemo] = useState(false);
   const [demoExiting, setDemoExiting] = useState(false);
@@ -54,15 +54,15 @@ export default function App() {
                 setVideoURL={setVideoURL}
                 videoURL={videoURL}
               />
-            ) : active === "ArcHome" ? (
-              <ArcHome
-                setActive={setActive}
-                setVideoURL={setVideoURL}
-                videoURL={videoURL}
-                setVideoFile={setVideoFile}
-              />
-            ) : active === "Arc" ? (
-              <Arc videoUrl={videoURL} videoFile={videoFile} />
+            // ) : active === "ArcHome" ? (
+            //   <ArcHome
+            //     setActive={setActive}
+            //     setVideoURL={setVideoURL}
+            //     videoURL={videoURL}
+            //     setVideoFile={setVideoFile}
+            //   />
+            // ) : active === "Arc" ? (
+            //   <Arc videoUrl={videoURL} videoFile={videoFile} />
             ) : active === "FormLive" ? (
               <FormLive />
             ) : active === "Playmaking" ? (
@@ -84,7 +84,7 @@ export default function App() {
       {/* Demo Button - Fixed on top right */}
       <button
         onClick={() => setShowDemo(true)}
-        className="fixed top-3 sm:top-4 right-3 sm:right-4 z-40 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 hover:text-orange-200 font-semibold rounded-lg border border-orange-500/40 hover:border-orange-400/60 transition-all backdrop-blur-md active:scale-95"
+        className="cursor-pointer fixed top-3 sm:top-4 right-3 sm:right-4 z-40 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 hover:text-orange-200 font-semibold rounded-lg border border-orange-500/40 hover:border-orange-400/60 transition-all backdrop-blur-md active:scale-95"
       >
         Demo
       </button>

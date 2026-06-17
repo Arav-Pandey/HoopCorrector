@@ -37,7 +37,7 @@ export default function DisplayLive({
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* 🔥 AI OVERLAY */}
+        {/* AI OVERLAY */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full pointer-events-none"
@@ -49,34 +49,54 @@ export default function DisplayLive({
         <div className="rounded-xl sm:rounded-2xl border border-orange-500/30 bg-slate-900/70 p-4 sm:p-6 backdrop-blur-xl space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Ankle Placement</p>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">
+                Ankle Placement
+              </p>
               <p className="text-white text-xs sm:text-sm font-medium mt-1">
-                {ankleFeedback === null || ankleFeedback === "" ? "N/A" : ankleFeedback}
+                {ankleFeedback === null || ankleFeedback === ""
+                  ? "N/A"
+                  : ankleFeedback}
               </p>
             </div>
             <div>
-              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Knee Placement</p>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">
+                Knee Placement
+              </p>
               <p className="text-white text-xs sm:text-sm font-medium mt-1">
-                {kneeFeedback === null || kneeFeedback === "" ? "N/A" : kneeFeedback}
+                {kneeFeedback === null || kneeFeedback === ""
+                  ? "N/A"
+                  : kneeFeedback}
               </p>
             </div>
             <div>
-              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Elbow Alignment</p>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">
+                Elbow Alignment
+              </p>
               <p className="text-white text-xs sm:text-sm font-medium mt-1">
-                {flareFeedback === null || flareFeedback === "" ? "N/A" : flareFeedback}
+                {flareFeedback === null || flareFeedback === ""
+                  ? "N/A"
+                  : flareFeedback}
               </p>
             </div>
             <div>
-              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Knee Bend</p>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">
+                Knee Bend
+              </p>
               <p className="text-white text-xs sm:text-sm font-medium mt-1">
-                {bendFeedback === null || bendFeedback === "" ? "N/A" : bendFeedback}
+                {bendFeedback === null || bendFeedback === ""
+                  ? "N/A"
+                  : bendFeedback}
               </p>
             </div>
           </div>
           {errorFeedback !== null && errorFeedback !== "" && (
             <div className="border-t border-white/10 pt-4">
-              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">Error Feedback</p>
-              <p className="text-white text-sm font-medium mt-1">{errorFeedback}</p>
+              <p className="text-orange-300 text-xs uppercase font-semibold tracking-widest">
+                Error Feedback
+              </p>
+              <p className="text-white text-sm font-medium mt-1">
+                {errorFeedback}
+              </p>
             </div>
           )}
         </div>

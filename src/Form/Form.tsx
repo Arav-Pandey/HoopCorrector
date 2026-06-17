@@ -1,25 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  PoseLandmarker,
-  FilesetResolver,
-  type NormalizedLandmark,
-} from "@mediapipe/tasks-vision";
+import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import Display from "./Display";
 import {
   calculateAngle,
   calculateDistance,
-  calculateKneeAngle,
   getSimilarity,
   scoreElbowAngle,
   scoreElbowFlare,
   scoreBendAngle,
-  getFlareFeedback,
-  getAnkleFeedback,
-  getKneeDistanceFeedback,
   getBendFeedback,
   checkKeypointVisibility,
+  emptyMeasurements,
+  averageTopFrames,
+  formatMeasurement,
+  getFlareFeedbackFromValues,
+  getAnkleFeedback,
+  getKneeDistanceFeedback,
+  averageLowestKneeAngles,
 } from "./calculations";
-import StephShot from "../assets/StephShot(3).mp4";
+import type { Measurements, TopFrame } from "./calculations";
+// import StephShot from "../assets/StephShot(3).mp4";
 
 interface Props {
   setActive: React.Dispatch<React.SetStateAction<string>>;
@@ -28,12 +28,7 @@ interface Props {
   setContextList: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-export default function Form({
-  setActive,
-  videoURL,
-  contextList,
-  setContextList,
-}: Props) {
+export default function Form({ setActive, videoURL, setContextList }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null); // Need canvas for the AI model to understand the pixels. Raw video data doesn't give pixels, canvas does
   const [ankleFeedback, setAnkleFeedback] = useState("");
@@ -44,56 +39,44 @@ export default function Form({
   const detectRef = useRef<() => void>(() => {});
   const [flareScore, setFlareScore] = useState<number | null>(null);
   const [angleScore, setAngleScore] = useState<number | null>(null);
-  const [elbowScore, setElbowScore] = useState<number | null>(null);
   const [bendScore, setBendScore] = useState<number | null>(null);
-  const topFramesRef = useRef<any[]>([]);
+  const topFramesRef = useRef<TopFrame[]>([]);
+  const latestMeasurementsRef = useRef<Measurements>(emptyMeasurements());
+  const elbowScore =
+    flareScore !== null && angleScore !== null
+      ? flareScore * 0.6 + angleScore * 0.4
+      : null;
+  const similarityRef = useRef<number | null>(null);
+  const lowestKneeAngleRef = useRef<number>(Infinity);
+  const [dominantHand, setDominantHand] = useState<"left" | "right" | null>(
+    null,
+  );
+  const minVis = 0.6;
   const curryBaseline = {
     flare: 0.02,
     elbowAngle: 1.74,
   };
-  const similarityRef = useRef<number | null>(null);
-  const ankleDistanceRef = useRef<number | null>(null);
-  const kneeDistanceRef = useRef<number | null>(null);
-  const shoulderDistanceRef = useRef<number | null>(null);
-  const lowestKneeAngleRef = useRef<number>(Infinity);
-  const elbowAngleRef = useRef<number | null>(null);
-  const [dominantHand, setDominantHand] = useState<"left" | "right" | null>(
-    null,
-  );
-  const rightShoulderRef = useRef<NormalizedLandmark | null>(null);
-  const leftShoulderRef = useRef<NormalizedLandmark | null>(null);
-  const rightElbowRef = useRef<NormalizedLandmark | null>(null);
-  const leftElbowRef = useRef<NormalizedLandmark | null>(null);
+  const topFrameCount = 5;
+  const kneeAngleAverageCount = 5;
+  const kneeFramesRef = useRef<number[]>([]);
 
   useEffect(() => {
-    if (angleScore === null || flareScore === null) return;
+    if (dominantHand === null) return;
 
-    setElbowScore(
-      flareScore !== null && angleScore !== null
-        ? flareScore * 0.6 + angleScore * 0.4
-        : null,
-    );
-  }, [angleScore, flareScore]);
-
-  useEffect(() => {
-    if (dominantHand === null) {
-      console.log("Dominant hand not selected yet.", dominantHand);
-      return;
-    }
     let poseLandmarker: PoseLandmarker;
     let animationFrameId: number;
 
     async function init() {
       const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
-      ); // Downloads the wasm files that run the AI model in the browser. Now vision holds the backend needed to run the pose detection
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+      );
 
       poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         // Loads engine
         baseOptions: {
           // Downloads the AI files and which model to run
           modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
         },
         runningMode: "VIDEO", // What type of input is being send to the model. VIDEO means continuous frames from a video
         numPoses: 1, // Only detect one person
@@ -113,6 +96,11 @@ export default function Form({
       videoRef.current.onloadedmetadata = () => {
         const video = videoRef.current!;
         const canvas = canvasRef.current!;
+
+        topFramesRef.current = [];
+        latestMeasurementsRef.current = emptyMeasurements();
+        lowestKneeAngleRef.current = Infinity;
+        similarityRef.current = null;
 
         canvas.width = video.clientWidth;
         canvas.height = video.clientHeight;
@@ -137,37 +125,30 @@ export default function Form({
         if (video.ended) {
           cancelAnimationFrame(animationFrameId);
 
-          const sorted = topFramesRef.current.sort(
-            (a, b) => a.wristY - b.wristY,
+          const averagedLowestKnee = averageLowestKneeAngles(
+            kneeFramesRef.current,
+            kneeAngleAverageCount,
           );
 
-          // take top 5 highest wrist frames
-          const top5 = sorted.slice(0, 5);
-
-          // average them
-          const avg = top5.reduce(
-            (acc, f) => ({
-              wristY: acc.wristY + f.wristY,
-              elbowAngle: acc.elbowAngle + f.elbowAngle,
-              flare: acc.flare + f.flare,
-            }),
-            { wristY: 0, elbowAngle: 0, flare: 0 },
+          const best = averageTopFrames(
+            topFramesRef.current,
+            averagedLowestKnee,
+            topFrameCount,
           );
 
-          const best = {
-            wristY: avg.wristY / 5,
-            elbowAngle: avg.elbowAngle / 5,
-            flare: avg.flare / 5,
-            kneeAngle: lowestKneeAngleRef.current,
-          };
+          if (!best) {
+            similarityRef.current = null;
+            return;
+          }
+
           if (best.flare !== 0) {
             setFlareScore(scoreElbowFlare(best.flare));
           }
           if (best.elbowAngle !== 0) {
             setAngleScore(scoreElbowAngle(best.elbowAngle));
           }
-          if (lowestKneeAngleRef.current !== null) {
-            setBendScore(scoreBendAngle(lowestKneeAngleRef.current));
+          if (Number.isFinite(averagedLowestKnee)) {
+            setBendScore(scoreBendAngle(averagedLowestKnee));
           }
           console.log(
             "Flare: ",
@@ -186,6 +167,16 @@ export default function Form({
           } else {
             similarityRef.current = null;
           }
+
+          const measurements = latestMeasurementsRef.current;
+          setContextList((previousContext) => [
+            ...previousContext,
+            `Shooting elbow is ${formatMeasurement(best.flare)} pixels off of in line with the shooting shoulder.`,
+            `Elbow angle is ${formatMeasurement(best.elbowAngle)} degrees.`,
+            `Ankle distance is ${formatMeasurement(measurements.ankleDistance)} pixels.`,
+            `Knee distance is ${formatMeasurement(measurements.kneeDistance)} pixels.`,
+            `Shoulder distance is ${formatMeasurement(measurements.shoulderDistance)} pixels.`,
+          ]);
 
           return;
         }
@@ -228,15 +219,12 @@ export default function Form({
         const leftAnkle = landmarks[27];
         const rightKnee = landmarks[26];
         const leftKnee = landmarks[25];
-        const leftHip = landmarks[23];
+        const hip = dominantHand == "right" ? landmarks[24] : landmarks[23];
+        const knee = dominantHand == "right" ? landmarks[26] : landmarks[25];
+        const ankle = dominantHand == "right" ? landmarks[28] : landmarks[27];
 
-        rightShoulderRef.current = rightShoulder;
-        leftShoulderRef.current = leftShoulder;
-        rightElbowRef.current = elbow;
-        leftElbowRef.current = landmarks[13];
-
-        // Checking if points are not at all detected
         if (
+          !shoulder ||
           !rightShoulder ||
           !leftShoulder ||
           !elbow ||
@@ -244,100 +232,105 @@ export default function Form({
           !rightAnkle ||
           !leftAnkle ||
           !rightKnee ||
-          !leftKnee
+          !leftKnee ||
+          !hip ||
+          !knee ||
+          !ankle
         ) {
           setErrorFeedback("⚠️ Unable to detect all keypoints.");
+          animationFrameId = requestAnimationFrame(detect);
+          return;
         }
 
-        // Checking if points are barely detected
-        if (rightAnkle.visibility < 0.1 || leftAnkle.visibility < 0.1) {
-          setAnkleFeedback("⚠️ Ankles not visible enough.");
-        }
-        if (rightKnee.visibility < 0.1 || leftKnee.visibility < 0.1) {
-          setKneeFeedback("⚠️ Knees not visible enough.");
-        }
-        if (
-          leftHip.visibility < 0.1 ||
-          leftKnee.visibility < 0.1 ||
-          leftAnkle.visibility < 0.1
-        ) {
-          setBendFeedback("⚠️ Unable to detect knee bend.");
-        }
-
-        setErrorFeedback(
-          checkKeypointVisibility(
-            {
-              rightShoulder,
-              leftShoulder,
-              elbow,
-              wrist,
-              rightAnkle,
-              leftAnkle,
-              rightKnee,
-              leftKnee,
-            },
-            1,
-          ),
-        );
-
-        if (leftAnkle.visibility > 0.1 && rightAnkle.visibility > 0.1) {
-          ankleDistanceRef.current = calculateDistance(rightAnkle, leftAnkle);
-        }
-        if (leftKnee.visibility > 0.1 && rightKnee.visibility > 0.1) {
-          kneeDistanceRef.current = calculateDistance(rightKnee, leftKnee);
-        }
-        if (rightShoulder.visibility > 0.1 && leftShoulder.visibility > 0.1) {
-          shoulderDistanceRef.current = calculateDistance(
+        const measurements = emptyMeasurements();
+        const keypointsVisible = checkKeypointVisibility(
+          {
             rightShoulder,
             leftShoulder,
-          );
-        }
-        if (
-          leftHip.visibility > 0.1 &&
-          leftKnee.visibility > 0.1 &&
-          leftAnkle.visibility > 0.1
-        ) {
-          let kneeAngle = calculateKneeAngle(leftHip, leftKnee, leftAnkle);
+            elbow,
+            wrist,
+            rightAnkle,
+            leftAnkle,
+            rightKnee,
+            leftKnee,
+          },
+          minVis,
+        );
+        const anklesVisible =
+          leftAnkle.visibility > minVis && rightAnkle.visibility > minVis;
+        const kneesVisible =
+          leftKnee.visibility > minVis && rightKnee.visibility > minVis;
+        const shouldersVisible =
+          rightShoulder.visibility > minVis && leftShoulder.visibility > minVis;
+        const shootingArmVisible =
+          shoulder.visibility > minVis &&
+          elbow.visibility > minVis &&
+          wrist.visibility > minVis;
+        const bendVisible =
+          hip.visibility > minVis &&
+          leftKnee.visibility > minVis &&
+          leftAnkle.visibility > minVis;
+
+        setErrorFeedback((prev) =>
+          keypointsVisible ? prev : "⚠️ Some keypoints not visible enough.",
+        );
+
+        if (bendVisible) {
+          const kneeAngle = calculateAngle(hip, knee, ankle);
+          kneeFramesRef.current.push(kneeAngle);
           if (kneeAngle < lowestKneeAngleRef.current) {
             lowestKneeAngleRef.current = kneeAngle;
           }
         }
-        if (
-          rightShoulder.visibility > 0.1 &&
-          elbow.visibility > 0.1 &&
-          wrist.visibility > 0.1
-        ) {
-          elbowAngleRef.current = calculateAngle(rightShoulder, elbow, wrist);
+
+        if (anklesVisible) {
+          measurements.ankleDistance = calculateDistance(rightAnkle, leftAnkle);
+        }
+        if (kneesVisible) {
+          measurements.kneeDistance = calculateDistance(rightKnee, leftKnee);
+        }
+        if (shouldersVisible) {
+          measurements.shoulderDistance = calculateDistance(
+            rightShoulder,
+            leftShoulder,
+          );
         }
 
-        // Elbow flare detection
-        const flareDistance = Math.abs(elbow.x - shoulder.x);
-        setContextList([
-          ...contextList,
-          `Shooting elbow is ${flareDistance} pixels off of in line with the shooting shoulder.`,
-          `Ankle distance is ${ankleDistanceRef} pixels.`,
-          `Knee distance is ${kneeDistanceRef} pixels.`,
-          `Shoulder distance is ${shoulderDistanceRef} pixels.`,
-        ]);
+        if (shootingArmVisible) {
+          measurements.elbowAngle = calculateAngle(shoulder, elbow, wrist);
+          measurements.flareDistance = Math.abs(elbow.x - shoulder.x);
 
-        topFramesRef.current.push({
-          wristY: wrist.y,
-          elbowAngle: elbowAngleRef.current,
-          flare: flareDistance,
-        });
+          topFramesRef.current.push({
+            wristY: wrist.y,
+            elbowAngle: measurements.elbowAngle,
+            flare: measurements.flareDistance,
+          });
+        }
 
-        // Checking calculations and giving feedback. See in calculations.tsx how the feedback is determined
-        setFlareFeedback(getFlareFeedback(flareDistance, elbowAngleRef));
+        latestMeasurementsRef.current = measurements;
 
+        setFlareFeedback(
+          getFlareFeedbackFromValues(
+            measurements.flareDistance,
+            measurements.elbowAngle,
+          ),
+        );
         setAnkleFeedback(
-          getAnkleFeedback(ankleDistanceRef, shoulderDistanceRef),
+          getAnkleFeedback(
+            measurements.ankleDistance,
+            measurements.shoulderDistance,
+          ),
         );
-
         setKneeFeedback(
-          getKneeDistanceFeedback(kneeDistanceRef, shoulderDistanceRef),
+          getKneeDistanceFeedback(
+            measurements.kneeDistance,
+            measurements.shoulderDistance,
+          ),
         );
-        if (lowestKneeAngleRef.current !== null) {
+        if (Number.isFinite(lowestKneeAngleRef.current)) {
           setBendFeedback(getBendFeedback(lowestKneeAngleRef.current));
+        } else {
+          setBendFeedback("⚠️ Unable to detect knee bend.");
         }
       }
 
@@ -348,7 +341,7 @@ export default function Form({
     detectRef.current = detect;
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [videoURL, dominantHand]);
+  }, [videoURL, dominantHand, setContextList]);
 
   const rewatchFeedback = () => {
     if (!videoRef.current) return;
@@ -357,6 +350,14 @@ export default function Form({
     setKneeFeedback("All Good!");
     setFlareFeedback("All Good!");
     setErrorFeedback("");
+    setBendFeedback(null);
+    setFlareScore(null);
+    setAngleScore(null);
+    setBendScore(null);
+    similarityRef.current = null;
+    topFramesRef.current = [];
+    latestMeasurementsRef.current = emptyMeasurements();
+    lowestKneeAngleRef.current = Infinity;
 
     videoRef.current.currentTime = 0; // go back to start
     videoRef.current.play(); // start playing again
@@ -381,10 +382,6 @@ export default function Form({
       bendScore={bendScore}
       similarity={similarityRef}
       setDominantHand={setDominantHand}
-      rightShoulderRef={rightShoulderRef}
-      leftShoulderRef={leftShoulderRef}
-      rightElbowRef={rightElbowRef}
-      leftElbowRef={leftElbowRef}
     />
   );
 }

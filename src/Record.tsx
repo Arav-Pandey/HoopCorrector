@@ -8,7 +8,12 @@ interface Props {
   setVideoFile?: React.Dispatch<React.SetStateAction<File | null>>;
 }
 
-export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFile }: Props) {
+export default function Recorder({
+  setVideoURL,
+  videoURL,
+  usePreview,
+  setVideoFile,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -57,15 +62,15 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
       try {
         // Stop previous stream if exists
         if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current.getTracks().forEach((track) => track.stop());
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
           // broswer API that asks for permission to get live camera feed and then returns that data
-          video: { 
-            width: { ideal: 640 }, 
+          video: {
+            width: { ideal: 640 },
             height: { ideal: 480 },
-            facingMode: facingMode
+            facingMode: facingMode,
           },
           audio: false,
         });
@@ -77,7 +82,10 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
         streamRef.current = stream;
 
         const mimeType = getSupportedMimeType();
-        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+        const recorder = new MediaRecorder(
+          stream,
+          mimeType ? { mimeType } : {},
+        );
 
         recorder.onerror = (event) => {
           console.error("MediaRecorder error:", event.error);
@@ -95,18 +103,23 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
         recorder.onstop = () => {
           const mimeType = recorder.mimeType || "video/webm";
           const blob = new Blob(chunksRef.current, { type: mimeType }); // Makes a video that is recorded
-          console.log("Recording complete. MIME type:", mimeType, "Blob size:", blob.size);
-          
+          console.log(
+            "Recording complete. MIME type:",
+            mimeType,
+            "Blob size:",
+            blob.size,
+          );
+
           if (blob.size === 0) {
             alert("Recording failed - no data captured. Please try again.");
             chunksRef.current = [];
             return;
           }
-          
+
           // Create a File object for processing (better for iPad/Safari compatibility)
           const file = new File([blob], "video.mp4", { type: mimeType });
           setVideoFile?.(file);
-          
+
           const url = URL.createObjectURL(blob); // Makes a url link to the video in memory. For example, blob:http://localhost:5713/{random generated link}
           setVideoURL(url);
           chunksRef.current = []; // clears data from the array
@@ -145,7 +158,7 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
 
   return (
     <div className="w-full min-h-[80vh] flex flex-col items-center justify-center py-6 px-4 sm:py-8 text-white">
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl sm:rounded-[2rem] border border-orange-500/30 bg-slate-900/70 p-4 sm:p-6 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl sm:rounded-4xl border border-orange-500/30 bg-slate-900/70 p-4 sm:p-6 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,159,67,0.18),_transparent_30%),radial-gradient(circle_at_bottom_left,_rgba(255,99,71,0.12),_transparent_35%)]" />
         <div className="relative space-y-6 sm:space-y-8">
           {/* Header */}
@@ -154,7 +167,8 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
               Record Your Shot
             </h1>
             <p className="text-sm sm:text-base lg:text-lg leading-6 sm:leading-8 text-slate-300">
-              Position your camera to capture your full shooting form. You can use your device's front or back camera.
+              Position your camera to capture your full shooting form. You can
+              use your device's front or back camera.
             </p>
           </div>
 
@@ -170,7 +184,9 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
             {recording && (
               <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 rounded-full bg-red-500/90 px-3 sm:px-4 py-1.5 sm:py-2">
                 <span className="inline-flex h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-200 animate-pulse" />
-                <span className="text-xs sm:text-sm font-semibold text-white">Recording</span>
+                <span className="text-xs sm:text-sm font-semibold text-white">
+                  Recording
+                </span>
               </div>
             )}
           </div>
@@ -217,9 +233,15 @@ export default function Recorder({ setVideoURL, videoURL, usePreview, setVideoFi
           {videoURL && (
             <div className="space-y-4 sm:space-y-6 border-t border-white/10 pt-6 sm:pt-8">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Recording Preview</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">
+                  Recording Preview
+                </h2>
                 <div className="relative overflow-hidden rounded-xl sm:rounded-[2rem] border border-white/10 bg-slate-950/80 p-3 sm:p-4 shadow-xl">
-                  <video src={videoURL} controls className="w-full rounded-lg sm:rounded-2xl" />
+                  <video
+                    src={videoURL}
+                    controls
+                    className="w-full rounded-lg sm:rounded-2xl"
+                  />
                 </div>
               </div>
 

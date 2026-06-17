@@ -1,5 +1,22 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
+export interface TopFrame {
+  wristY: number;
+  elbowAngle: number;
+  flare: number;
+}
+
+interface KeypointVisibilityProps {
+  rightShoulder: NormalizedLandmark;
+  leftShoulder: NormalizedLandmark;
+  elbow: NormalizedLandmark;
+  wrist: NormalizedLandmark;
+  rightAnkle: NormalizedLandmark;
+  leftAnkle: NormalizedLandmark;
+  rightKnee: NormalizedLandmark;
+  leftKnee: NormalizedLandmark;
+}
+
 type user = {
   wristY: number;
   elbowAngle: number;
@@ -10,6 +27,14 @@ type curry = {
   flare: number;
   elbowAngle: number;
 };
+
+export interface Measurements {
+  ankleDistance: number | null;
+  kneeDistance: number | null;
+  shoulderDistance: number | null;
+  elbowAngle: number | null;
+  flareDistance: number | null;
+}
 
 export function getSimilarity(user: user, curry: curry) {
   function normalize(diff: number, tolerance: number) {
@@ -25,23 +50,6 @@ export function getSimilarity(user: user, curry: curry) {
   const total = flareScore * 0.5 + angleScore * 0.5;
 
   return Math.round(total * 100);
-}
-
-export function calculateAngle(a: any, b: any, c: any) {
-  const ab = { x: a.x - b.x, y: a.y - b.y };
-  const cb = { x: c.x - b.x, y: c.y - b.y };
-
-  const dot = ab.x * cb.x + ab.y * cb.y;
-  const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
-  const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
-
-  let cosine = dot / (magAB * magCB);
-
-  // clamp to valid range
-  cosine = Math.max(-1, Math.min(1, cosine));
-
-  const angle = Math.acos(cosine);
-  return (angle * 180) / Math.PI;
 }
 
 export function calculateDistance(a: any, b: any) {
@@ -74,31 +82,33 @@ export function scoreBendAngle(angle: number): number {
   return 40; // extreme cases
 }
 
-export function calculateKneeAngle(
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-  c: { x: number; y: number },
+export function calculateAngle(
+  a: NormalizedLandmark,
+  b: NormalizedLandmark,
+  c: NormalizedLandmark,
 ) {
-  const ab = {
+  const ba = {
     x: a.x - b.x,
     y: a.y - b.y,
   };
 
-  const cb = {
+  const bc = {
     x: c.x - b.x,
     y: c.y - b.y,
   };
 
-  const dot = ab.x * cb.x + ab.y * cb.y;
+  const dot = ba.x * bc.x + ba.y * bc.y;
 
-  const magAB = Math.sqrt(ab.x ** 2 + ab.y ** 2);
-  const magCB = Math.sqrt(cb.x ** 2 + cb.y ** 2);
+  const magBA = Math.hypot(ba.x, ba.y);
+  const magBC = Math.hypot(bc.x, bc.y);
 
-  const cosine = dot / (magAB * magCB);
+  if (magBA === 0 || magBC === 0) {
+    return 0;
+  }
 
-  const angleRad = Math.acos(Math.max(-1, Math.min(1, cosine)));
+  const cosine = Math.max(-1, Math.min(1, dot / (magBA * magBC)));
 
-  return (angleRad * 180) / Math.PI;
+  return Math.acos(cosine) * (180 / Math.PI);
 }
 
 export function getBendFeedback(angle: number) {
@@ -111,9 +121,13 @@ export function getFlareFeedback(
   flareDistance: number,
   elbowAngleRef: React.RefObject<number | null>,
 ) {
+  if (!elbowAngleRef.current || elbowAngleRef.current === null) {
+    return "Unable to calculate elbow angle";
+  }
+
   if (flareDistance > 0.15) {
     return "⚠️ Elbow is flaring too wide";
-  } else if (elbowAngleRef.current && elbowAngleRef.current < 40) {
+  } else if (elbowAngleRef.current < 40) {
     return "⚠️ Arm angle too tight";
   } else {
     return "✅ Good elbow alignment";
@@ -121,60 +135,33 @@ export function getFlareFeedback(
 }
 
 export function getAnkleFeedback(
-  ankleDistance: React.RefObject<number | null>,
-  shoulderDistance: React.RefObject<number | null>,
+  ankleDistance: number | null,
+  shoulderDistance: number | null,
 ) {
-  if (
-    ankleDistance.current !== null &&
-    shoulderDistance.current !== null &&
-    ankleDistance.current < shoulderDistance.current - 1
-  ) {
+  if (ankleDistance === null || shoulderDistance === null) {
+    return "⚠️ Unable to detect ankle placement.";
+  }
+  if (ankleDistance < shoulderDistance - 0.05) {
     return "⚠️ Feet are too close together";
-  } else if (
-    ankleDistance.current !== null &&
-    shoulderDistance.current !== null &&
-    ankleDistance.current > shoulderDistance.current + 1
-  ) {
+  } else if (ankleDistance > shoulderDistance + 0.05) {
     return "⚠️ Feet are too far apart";
   }
   return "✅ Good feet placement";
 }
 
 export function getKneeDistanceFeedback(
-  kneeDistanceRef: React.RefObject<number | null>,
-  shoulderDistanceRef: React.RefObject<number | null>,
+  kneeDistance: number | null,
+  shoulderDistance: number | null,
 ) {
-  if (
-    kneeDistanceRef.current === null ||
-    shoulderDistanceRef.current === null
-  ) {
+  if (kneeDistance === null || shoulderDistance === null) {
     return "⚠️ Unable to detect knee placement.";
   }
-  if (
-    kneeDistanceRef.current !== null &&
-    shoulderDistanceRef.current !== null &&
-    kneeDistanceRef.current < shoulderDistanceRef.current - 6
-  ) {
+  if (kneeDistance < shoulderDistance - 0.08) {
     return "⚠️ Knees are too close together";
-  } else if (
-    kneeDistanceRef.current !== null &&
-    shoulderDistanceRef.current !== null &&
-    kneeDistanceRef.current > shoulderDistanceRef.current + 6
-  ) {
+  } else if (kneeDistance > shoulderDistance + 0.08) {
     return "⚠️ Knees are too far apart";
   }
   return "✅ Good knee placement";
-}
-
-interface KeypointVisibilityProps {
-  rightShoulder: NormalizedLandmark;
-  leftShoulder: NormalizedLandmark;
-  elbow: NormalizedLandmark;
-  wrist: NormalizedLandmark;
-  rightAnkle: NormalizedLandmark;
-  leftAnkle: NormalizedLandmark;
-  rightKnee: NormalizedLandmark;
-  leftKnee: NormalizedLandmark;
 }
 
 export function checkKeypointVisibility(
@@ -200,7 +187,68 @@ export function checkKeypointVisibility(
     rightKnee.visibility < threshold ||
     leftKnee.visibility < threshold
   ) {
-    return "⚠️ Keypoints not visible enough.";
+    return false;
   }
-  return null;
+  return true;
+}
+
+export function emptyMeasurements(): Measurements {
+  return {
+    ankleDistance: null,
+    kneeDistance: null,
+    shoulderDistance: null,
+    elbowAngle: null,
+    flareDistance: null,
+  };
+}
+
+export function averageTopFrames(
+  frames: TopFrame[],
+  kneeAngle: number,
+  topFrameCount: number,
+) {
+  const topFrames = [...frames]
+    .sort((a, b) => a.wristY - b.wristY)
+    .slice(0, topFrameCount);
+
+  if (topFrames.length === 0) return null;
+
+  const total = topFrames.reduce(
+    (acc, frame) => ({
+      wristY: acc.wristY + frame.wristY,
+      elbowAngle: acc.elbowAngle + frame.elbowAngle,
+      flare: acc.flare + frame.flare,
+    }),
+    { wristY: 0, elbowAngle: 0, flare: 0 },
+  );
+
+  return {
+    wristY: total.wristY / topFrames.length,
+    elbowAngle: total.elbowAngle / topFrames.length,
+    flare: total.flare / topFrames.length,
+    kneeAngle,
+  };
+}
+
+export function getFlareFeedbackFromValues(
+  flareDistance: number | null,
+  elbowAngle: number | null,
+) {
+  if (flareDistance === null || elbowAngle === null) {
+    return "⚠️ Arms not fully visible. Unable to calculate elbow feedback.";
+  }
+  if (flareDistance > 0.15) return "⚠️ Elbow is flaring too wide";
+  if (elbowAngle < 40) return "⚠️ Arm angle too tight";
+  return "✅ Good elbow alignment";
+}
+
+export function formatMeasurement(value: number | null) {
+  return value === null ? "N/A" : value.toFixed(3);
+}
+
+export function averageLowestKneeAngles(angles: number[], count: number) {
+  if (angles.length === 0) return Infinity;
+  const sorted = [...angles].sort((a, b) => a - b);
+  const lowest = sorted.slice(0, count);
+  return lowest.reduce((sum, a) => sum + a, 0) / lowest.length;
 }

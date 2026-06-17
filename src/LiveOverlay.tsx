@@ -49,14 +49,16 @@ export default function LiveOverlay({ setActive }: Props) {
               <div className="w-full">
                 <p className="text-base sm:text-xl font-semibold text-white">Deeper review</p>
                 <p className="mt-1 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-300">
-                  Record your session and get a full breakdown of body mechanics, release, and arc.
+                  {/* Record your session and get a full breakdown of body mechanics, release, and arc. */}
+                  Record your session and get a full breakdown of body mechanics and release.
                 </p>
               </div>
             </div>
           </button>
 
+          {/* id="arc-btn" */}
           <button
-            id="arc-btn"
+            id="live-btn"
             className="group relative overflow-hidden rounded-xl sm:rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-slate-950/95 via-orange-500/10 to-slate-900/85 p-4 sm:p-6 text-left shadow-xl transition hover:-translate-y-1 hover:border-orange-400/40 active:scale-95"
             onClick={() => {
               setActive("FormLive");

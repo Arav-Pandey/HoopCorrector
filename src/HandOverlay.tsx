@@ -43,8 +43,9 @@ export default function HandOverlay({ setDominantHand }: Props) {
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {/* id="arc-btn" */}
           <button
-            id="arc-btn"
+            id="left-hand-btn"
             className="group flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-6 text-white shadow-xl transition hover:-translate-y-1 hover:border-orange-400/40 hover:bg-orange-500/10"
             onClick={() => {
               setDominantHand("left");
