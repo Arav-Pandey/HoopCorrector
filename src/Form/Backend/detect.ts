@@ -48,6 +48,35 @@ const connections: [number, number][] = [
 const topFrameCount = 5;
 const kneeAngleAverageCount = 5;
 
+// video has object-contain inside a fixed-aspect box, so it can be
+// letterboxed. This finds the actual on-screen rect of the video pixels
+// so normalized landmark coords (0-1 relative to the real frame) map
+// correctly instead of stretching across the empty bars.
+function getRenderedVideoRect(video: HTMLVideoElement) {
+  const boxW = video.clientWidth;
+  const boxH = video.clientHeight;
+  const videoRatio = video.videoWidth / video.videoHeight;
+  const boxRatio = boxW / boxH;
+
+  let width: number, height: number, offsetX: number, offsetY: number;
+
+  if (videoRatio > boxRatio) {
+    // video relatively wider than box -> letterboxed top/bottom
+    width = boxW;
+    height = boxW / videoRatio;
+    offsetX = 0;
+    offsetY = (boxH - height) / 2;
+  } else {
+    // video relatively narrower than box (e.g. portrait clip) -> letterboxed left/right
+    height = boxH;
+    width = boxH * videoRatio;
+    offsetX = (boxW - width) / 2;
+    offsetY = 0;
+  }
+
+  return { width, height, offsetX, offsetY };
+}
+
 export default function detect(props: DetectProps) {
   const {
     videoRef,
@@ -137,10 +166,7 @@ export default function detect(props: DetectProps) {
       }
       if (best.kneeDistance !== 0 && best.feetDistance) {
         setKneeDistanceScore(
-          scoreKneeDistance(
-            best.kneeDistance,
-            best.feetDistance,
-          ),
+          scoreKneeDistance(best.kneeDistance, best.feetDistance),
         );
         setKneeFeedback(
           getKneeDistanceFeedback(
@@ -176,6 +202,12 @@ export default function detect(props: DetectProps) {
 
   if (results.landmarks.length > 0) {
     const landmarks = results.landmarks[0];
+    const {
+      width: rw,
+      height: rh,
+      offsetX,
+      offsetY,
+    } = getRenderedVideoRect(video);
 
     connections.forEach(([i, j]) => {
       const a = landmarks[i];
@@ -183,8 +215,8 @@ export default function detect(props: DetectProps) {
       if (!a || !b || a.visibility < minVis || b.visibility < minVis) return;
 
       ctx.beginPath();
-      ctx.moveTo(a.x * video.clientWidth, a.y * video.clientHeight);
-      ctx.lineTo(b.x * video.clientWidth, b.y * video.clientHeight);
+      ctx.moveTo(offsetX + a.x * rw, offsetY + a.y * rh);
+      ctx.lineTo(offsetX + b.x * rw, offsetY + b.y * rh);
       ctx.strokeStyle = "lime";
       ctx.lineWidth = 2;
       ctx.stroke();
@@ -197,8 +229,8 @@ export default function detect(props: DetectProps) {
       if (!visibleIndices.has(index)) return;
       ctx.beginPath();
       ctx.arc(
-        landmark.x * video.clientWidth,
-        landmark.y * video.clientHeight,
+        offsetX + landmark.x * rw,
+        offsetY + landmark.y * rh,
         5,
         0,
         2 * Math.PI,

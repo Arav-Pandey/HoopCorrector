@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import UploadButton from "../UploadButton";
-import sampleVideo from "../../../assets/Feet_Close_Shot.mp4";
+import sampleVideo from "../../../assets/Final_Shot.mp4";
 import {
   RiStopCircleFill,
   RiCameraSwitchLine,

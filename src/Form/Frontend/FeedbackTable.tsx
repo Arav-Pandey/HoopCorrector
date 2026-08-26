@@ -65,10 +65,6 @@ function FeedbackRow({ label, feedback, score, href }: FeedbackRowProps) {
         </div>
       </td>
 
-      <td className="px-4 py-4 leading-8 text-zinc-200 sm:px-6 sm:text-xl">
-        {feedback}
-      </td>
-
       <td className="px-4 py-4 sm:px-6">
         {hasScore ? (
           <span
@@ -106,6 +102,10 @@ function FeedbackRow({ label, feedback, score, href }: FeedbackRowProps) {
           </span>
         )}
       </td>
+
+      <td className="px-4 py-4 leading-8 text-zinc-200 sm:px-6 sm:text-xl">
+        {feedback}
+      </td>
     </tr>
   );
 }
@@ -131,11 +131,11 @@ export default function FeedbackTable({
           <tr className="border-b border-orange-500/20 bg-linear-to-r from-orange-500/20 via-amber-500/15 to-orange-500/20 text-[11px] uppercase tracking-[0.25em] text-orange-200 sm:text-sm">
             <th className="px-4 py-4 font-black sm:px-6 sm:py-5">Metric</th>
 
-            <th className="px-4 py-4 font-black sm:px-6 sm:py-5">Feedback</th>
-
             <th className="px-4 py-4 font-black sm:px-6 sm:py-5">Score</th>
 
             <th className="px-4 py-4 font-black sm:px-6 sm:py-5">Rating</th>
+
+            <th className="px-4 py-4 font-black sm:px-6 sm:py-5">Feedback</th>
           </tr>
         </thead>
 
